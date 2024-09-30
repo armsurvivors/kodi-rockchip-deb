@@ -20,7 +20,7 @@ jobs:
   # Setup for runner:
   # If on thin LVM: 
   #   THIN_POOL="thinvg" SIZE=100G LABEL=build_others MOUNT_POINT=/opt/build_others lvm_thin_ext4_prepare
-  # GH_RUNNER_USER="ghrunnerk8scontainerd" BASE_DIR="/opt/build_others" GH_OWNER_REPO="rpardini/k8s-worker-containerd" setup_github_runner
+  # GH_RUNNER_USER="ghrunnerk8scontainerd" BASE_DIR="/opt/build_others" GH_OWNER_REPO="rpardini/kodi-rockchip-gbm" setup_github_runner
   # GH_RUNNER_USER="ghrunnerarmsurvivors" BASE_DIR="/opt/build_armsurvivors" GH_OWNER_REPO="armsurvivors" setup_github_runner
 
   build:
@@ -53,7 +53,7 @@ jobs:
           load: true
           pull: true # bring in updated versions of preexisting GH images
           push: false
-          tags: k8s-worker-containerd:${{ matrix.arch.name }}
+          tags: kodi-rockchip-gbm:${{ matrix.arch.name }}
           cache-from: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro }}
           cache-to: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro }}
           build-args: |
@@ -62,7 +62,7 @@ jobs:
             OS_ARCH=${{ matrix.arch.name }}
 
       - name: Extract artifacts from docker ${{ matrix.arch.name }} ${{ matrix.distro }}
-        run: docker cp $(docker create --rm k8s-worker-containerd:${{ matrix.arch.name }}):/out ./
+        run: docker cp $(docker create --rm kodi-rockchip-gbm:${{ matrix.arch.name }}):/out ./
 
       - name: Upload deb as artifact ${{ matrix.arch.name }} ${{ matrix.distro }}
         uses: actions/upload-artifact@v3

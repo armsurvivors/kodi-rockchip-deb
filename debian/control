@@ -1,12 +1,12 @@
 Maintainer: Ricardo Pardini <ricardo@pardini.net>
-Source: k8s-worker-containerd
+Source: kodi-rockchip-gbm
 Section: admin
 Priority: optional
 Build-Depends: debhelper (>=9.2), lsb-release, bash (>= 4.0), dh-sequence-single-binary
 Standards-Version: 3.9.6
 Homepage: https://containerd.io/
 
-Package: k8s-worker-containerd
+Package: kodi-rockchip-gbm
 Provides: kodi
 Conflicts: kodi
 Description: containerd/run/cri-tools/podman/conman for k8s

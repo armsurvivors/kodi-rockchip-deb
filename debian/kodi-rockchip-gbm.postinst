@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+
+#DEBHELPER#
+
+echo "kodi-rockchip-gbm: post-inst."
+
+exit 0
