@@ -6,38 +6,32 @@ ARG OS_ARCH="arm64"
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -y update
 RUN apt-get -y dist-upgrade
-RUN apt-get -y install git bash wget curl build-essential devscripts debhelper pkg-config
+RUN apt-get -y install git bash wget curl build-essential devscripts debhelper pkg-config cmake meson
+RUN apt-get -y install tree colorized-logs # for pipetty
 SHELL ["/bin/bash", "-e", "-c"]
 
 
-# Build rkmpp from source
+# Build stuff from source
 FROM build as mediaplayer
+
+RUN apt-get -y install libdrm-dev
+
 WORKDIR /src
-ARG RUNC_VERSION="v1.1.14"
-RUN git -c advice.detachedHead=false clone --depth=1  --single-branch --branch=${RUNC_VERSION} https://github.com/opencontainers/runc /src/runc
-WORKDIR /src/runc
-RUN make
+RUN git -c advice.detachedHead=false clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git /src/rkmpp
+WORKDIR /src/rkmpp/rkmpp_build
+
+RUN pipetty cmake     -DCMAKE_INSTALL_PREFIX=/usr/local     -DCMAKE_BUILD_TYPE=Release     -DBUILD_SHARED_LIBS=ON     -DBUILD_TEST=OFF ..
+RUN pipetty make -j$(nproc)
+RUN pipetty make install
 
 
 # Prepare the results in /out
 FROM build as packager
-WORKDIR /out/usr/sbin
-COPY --from=runc /src/runc/runc .
 
-WORKDIR /out/usr/bin
-COPY --from=cri-tools /src/cri-tools/build/bin/linux/${OS_ARCH}/crictl crictl-latest
-COPY --from=cri-tools /src/cri-tools/build/bin/linux/${OS_ARCH}/critest .
-COPY --from=containerd /src/containerd/bin/* .
-#COPY --from=podman /src/podman/bin/podman .
-#COPY --from=conmon /src/conmon/bin/conmon .
-COPY --from=cfssl /src/cfssl/bin/cfssl .
-COPY --from=cfssl /src/cfssl/bin/cfssljson .
-COPY --from=nerdctl /src/nerdctl/_output/nerdctl .
-
-# add podman default configs
-#WORKDIR /out/etc/containers
-#RUN curl -L -o /out/etc/containers/registries.conf https://src.fedoraproject.org/rpms/containers-common/raw/main/f/registries.conf
-#RUN curl -L -o /out/etc/containers/policy.json https://src.fedoraproject.org/rpms/containers-common/raw/main/f/default-policy.json
+WORKDIR /out/usr
+COPY --from=mediaplayer /usr/local .
+RUN cp -vp /bin/bash /out/usr/bin/something
+RUN tree /out
 
 # Prepare debian binary package
 WORKDIR /pkg/src
@@ -62,6 +56,8 @@ RUN cat /pkg/src/debian/changelog
 
 # Build the package, don't sign it, don't lint it, compress fast with xz
 WORKDIR /pkg/src
+RUN tree /pkg/src
+RUN cat debian/k8s-worker-containerd.install
 RUN debuild --no-lintian --build=binary -us -uc -Zxz -z1 
 RUN file /pkg/*.deb
 
@@ -71,15 +67,7 @@ RUN dpkg-deb -f /pkg/*.deb || true
 
 # Install it to make sure it works
 RUN dpkg -i /pkg/*.deb
-RUN runc --version
-RUN containerd --version
-RUN crictl-latest --version # Real bin
-RUN crictl --version # symlink in usr/local/bin
-#RUN podman --version
-#RUN conmon --version
-RUN cfssl version
-RUN cfssljson --version
-RUN nerdctl --version
+# @TODO --versions and such
 RUN dpkg -L k8s-worker-containerd
 
 RUN lsb_release -a
