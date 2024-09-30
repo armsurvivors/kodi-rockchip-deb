@@ -47,8 +47,8 @@ RUN pipetty make install
 
 # RKRGA
 WORKDIR /src
-RUN pipetty meson setup rkrga rkrga_build --prefix=/usr/local --libdir=lib --buildtype=release --default-library=shared -Dcpp_args=-fpermissive -Dlibdrm=false -Dlibrga_demo=false
-RUN pipetty meson configure rkrga_build
+RUN meson setup rkrga rkrga_build --prefix=/usr/local --libdir=lib --buildtype=release --default-library=shared -Dcpp_args=-fpermissive -Dlibdrm=false -Dlibrga_demo=false
+RUN meson configure rkrga_build
 RUN pipetty ninja -C rkrga_build install
 
 # ffmpeg, with rkxxx stuff. Nyanmisaka's fork, full of boogie goodness. You folks rock.
