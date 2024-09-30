@@ -1,3 +1,5 @@
+# Warning to the reader. This produces a .deb package with stuff in /usr/local. If this scares you, stop reading.
+# It is in fact, non-debian packaging. Probably fpm would be a better choice?
 ARG BASE_IMAGE="ubuntu:jammy"
 FROM ${BASE_IMAGE} AS packager
 
@@ -34,6 +36,9 @@ RUN git -c advice.detachedHead=false clone https://github.com/xbmc/xbmc.git kodi
 
 #### Builds
 
+# We'll build into /usr/local, so zero that out to get a clean slate. Yeah, it's stupid, but it works.
+RUN rm -rfv /usr/local/*
+
 # RKMPP
 WORKDIR /src/rkmpp/rkmpp_build
 RUN pipetty cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_TEST=OFF ..
@@ -64,14 +69,14 @@ RUN git fetch boogie gbm_drm_dynamic_afbc_video_planes:gbm_drm_dynamic_afbc_vide
 RUN git cherry-pick gbm_drm_dynamic_afbc_video_planes~2..gbm_drm_dynamic_afbc_video_planes
 RUN git log -n 10
 
-# Kodi build.
+# Kodi build. the --build step actually downloads things and that might fail, so retry it a few times.
 WORKDIR /src/kodi-build
 RUN pipetty cmake ../kodi -DCMAKE_INSTALL_PREFIX=/usr/local -DCORE_PLATFORM_NAME=gbm -DAPP_RENDER_SYSTEM=gles -DENABLE_INTERNAL_FMT=ON -DENABLE_INTERNAL_FLATBUFFERS=ON
-RUN pipetty cmake --build . -- -j$(nproc)
+RUN pipetty cmake --build . -- -j$(nproc) || pipetty cmake --build . -- -j$(nproc) || pipetty cmake --build . -- -j$(nproc) 
 RUN pipetty make install
 
-# Drop headers. We don't need them in the final package.
-RUN rm -rfv /usr/local/include
+# Drop headers for now. We don't need them in the final package.
+RUN rm -rf /usr/local/include
 
 ### ------- packaging
 WORKDIR /pkg/src/usr
