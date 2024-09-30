@@ -1,0 +1,124 @@
+name: main-latest
+
+on:
+  workflow_dispatch:
+  #push:
+  #  branches: [ main ]
+
+jobs:
+
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare release ID
+        id: prep
+        run: |
+          echo ::set-output name=created::$(date -u +'%Y%m%d-%H%M')
+    outputs:
+      created: ${{ steps.prep.outputs.created }} # refer to as ${{needs.prepare.outputs.created}}
+
+  # Setup for runner:
+  # If on thin LVM: 
+  #   THIN_POOL="thinvg" SIZE=100G LABEL=build_others MOUNT_POINT=/opt/build_others lvm_thin_ext4_prepare
+  # GH_RUNNER_USER="ghrunnerk8scontainerd" BASE_DIR="/opt/build_others" GH_OWNER_REPO="rpardini/k8s-worker-containerd" setup_github_runner
+  # GH_RUNNER_USER="ghrunnerarmsurvivors" BASE_DIR="/opt/build_armsurvivors" GH_OWNER_REPO="armsurvivors" setup_github_runner
+
+  build:
+    needs: [ prepare ]
+    runs-on: ${{ matrix.arch.runner }}
+    strategy:
+      fail-fast: false # let other jobs try to complete if one fails
+      matrix:
+        arch: [ { name: 'amd64', runner: 'ubuntu-latest' } , { name: 'arm64', runner: [ "self-hosted", "ARM64" ] } ]
+        distro: [ 'ubuntu:noble', 'debian:bookworm', 'ubuntu:jammy', 'debian:trixie' ]
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.arch.name }} ${{ matrix.distro }}
+        uses: docker/build-push-action@v3
+        timeout-minutes: 180
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/${{ matrix.arch.name }}
+          load: true
+          pull: true # bring in updated versions of preexisting GH images
+          push: false
+          tags: k8s-worker-containerd:${{ matrix.arch.name }}
+          cache-from: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro }}
+          cache-to: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro }}
+          build-args: |
+            PACKAGE_VERSION=${{needs.prepare.outputs.created}}
+            BASE_IMAGE=${{ matrix.distro }}
+            OS_ARCH=${{ matrix.arch.name }}
+
+      - name: Extract artifacts from docker ${{ matrix.arch.name }} ${{ matrix.distro }}
+        run: docker cp $(docker create --rm k8s-worker-containerd:${{ matrix.arch.name }}):/out ./
+
+      - name: Upload deb as artifact ${{ matrix.arch.name }} ${{ matrix.distro }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: deb
+          path: out/*.deb
+
+      - name: Upload tarball as artifact ${{ matrix.arch.name }} ${{ matrix.distro }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: tarball
+          path: out/*.tar.gz
+
+
+  release:
+    needs: [ prepare, build ] # depend on the previous jobs...
+    #if: "${{ always() }}" # ... but run even if (some of) them failed.
+    runs-on: ubuntu-latest
+    steps:
+      # Download the built artifacts from GH artifacts.  
+      - uses: actions/download-artifact@v3
+        name: Download deb artifacts
+        with:
+          name: deb
+          path: out
+
+      - uses: actions/download-artifact@v3
+        name: Download tarball artifacts
+        with:
+          name: tarball
+          path: out
+
+      - name: List artifacts downloaded
+        run: |
+          ls -lahtR
+
+      # Release the artifacts into GitHub Releases
+      - name: "GH specific release"
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "${{needs.prepare.outputs.created}}"
+          prerelease: false
+          title: "${{needs.prepare.outputs.created}}"
+          files: |
+            out/*.deb
+            out/*.tar.gz
+
+      #- name: "GH latest release"
+      #  uses: "marvinpinto/action-automatic-releases@latest"
+      #  with:
+      #    repo_token: "${{ secrets.GITHUB_TOKEN }}"
+      #    automatic_release_tag: "latest"
+      #    prerelease: false
+      #    title: "Latest: ${{needs.prepare.outputs.created}}"
+      #    files: |
+      #      out/*.deb
+      #      out/*.tar.gz
+

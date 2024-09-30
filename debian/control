@@ -1,0 +1,17 @@
+Maintainer: Ricardo Pardini <ricardo@pardini.net>
+Source: k8s-worker-containerd
+Section: admin
+Priority: optional
+Build-Depends: debhelper (>=9.2), lsb-release, bash (>= 4.0)
+Standards-Version: 3.9.6
+Homepage: https://containerd.io/
+
+Package: k8s-worker-containerd
+Provides: golang-cfssl, containerd (= 1.7.5), runc, podman, conman, golang-github-containers-image, golang-github-containers-common, cri-tools
+Conflicts: golang-cfssl, containerd, runc, podman, conman
+Description: containerd/run/cri-tools/podman/conman for k8s
+ containerd/run/cri-tools/podman/conman
+ Built from source. Docker-free stuff.
+Section: admin
+Pre-Depends: bash (>= 4.0)
+Depends: ${misc:Depends}, ${shlibs:Depends}
