@@ -14,8 +14,8 @@ SHELL ["/bin/bash", "-e", "-c"]
 # Build stuff from source
 FROM build as mediaplayer
 
-#RUN apt-get -y install libdrm-dev
 
+# RKMPP
 WORKDIR /src
 RUN git -c advice.detachedHead=false clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git /src/rkmpp
 WORKDIR /src/rkmpp/rkmpp_build
@@ -23,6 +23,39 @@ RUN pipetty cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -
 RUN pipetty make -j$(nproc)
 RUN pipetty make install
 
+# RKRGA
+WORKDIR /src
+RUN git -c advice.detachedHead=false clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git rkrga
+RUN pipetty meson setup rkrga rkrga_build \
+    --prefix=/usr/local \
+    --libdir=lib \
+    --buildtype=release \
+    --default-library=shared \
+    -Dcpp_args=-fpermissive \
+    -Dlibdrm=false \
+    -Dlibrga_demo=false
+RUN pipetty meson configure rkrga_build
+RUN pipetty ninja -C rkrga_build install
+
+
+# Dependencies for ffmpeg
+RUN apt-get -y install libdrm-dev
+
+
+# ffmpeg, with rkxxx stuff. Nyanmisaka's fork, full of boogie goodness.
+WORKDIR /src
+RUN git -c advice.detachedHead=false clone --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg
+WORKDIR /src/ffmpeg
+RUN pipetty ./configure --prefix=/usr/local --enable-gpl --enable-version3 --enable-libdrm --enable-rkmpp --enable-rkrga
+RUN pipetty make -j $(nproc)
+
+# Try the compiled FFmpeg without installation
+RUN ./ffmpeg -decoders | grep rkmpp
+RUN ./ffmpeg -encoders | grep rkmpp
+RUN ./ffmpeg -filters | grep rkrga
+
+# Install FFmpeg to the prefix path
+RUN make install
 
 # Prepare the results in /out
 FROM build as packager
