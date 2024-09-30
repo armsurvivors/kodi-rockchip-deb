@@ -1,4 +1,4 @@
-ARG BASE_IMAGE="debian:bookworm"
+ARG BASE_IMAGE="ubuntu:jammy"
 FROM ${BASE_IMAGE} AS packager
 
 #### Dependencies. In batches; this is built under buildx and layers not published so we don't care about layer size.
