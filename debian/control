@@ -7,8 +7,8 @@ Standards-Version: 3.9.6
 Homepage: https://containerd.io/
 
 Package: k8s-worker-containerd
-Provides: golang-cfssl, containerd (= 1.7.5), runc, podman, conman, golang-github-containers-image, golang-github-containers-common, cri-tools
-Conflicts: golang-cfssl, containerd, runc, podman, conman
+Provides: kodi
+Conflicts: kodi
 Description: containerd/run/cri-tools/podman/conman for k8s
  containerd/run/cri-tools/podman/conman
  Built from source. Docker-free stuff.

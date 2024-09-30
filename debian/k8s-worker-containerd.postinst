@@ -4,8 +4,8 @@ set -e
 #DEBHELPER#
 
 echo "k8s-worker-containerd: cri-tools: Installink symlink to /usr/bin/crictl-latest as /usr/local/bin/crictl"
-rm -f /usr/local/bin/crictl
-ln -s /usr/bin/crictl-latest /usr/local/bin/crictl
-/usr/local/bin/crictl --version
+#rm -f /usr/local/bin/crictl 
+#ln -s /usr/bin/crictl-latest /usr/local/bin/crictl
+#/usr/local/bin/crictl --version
 
 exit 0
