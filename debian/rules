@@ -9,7 +9,7 @@ export DEB_BUILD_OPTIONS=nostrip
 	dh $@
 
 override_dh_installsystemd:
-	dh_installsystemd --name=containerd --no-enable --no-start
+	dh_installsystemd --name=kodi --no-enable --no-start
 
 override_dh_usrlocal:
 	# Intentionally left blank to prevent dh_usrlocal from running. I'm *evil* and packaging stuff in /usr/local. Fire me.

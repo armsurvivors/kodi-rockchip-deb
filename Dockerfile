@@ -94,14 +94,11 @@ RUN rm -rfv /usr/local/include
 ### ------- packaging
 WORKDIR /out/usr
 RUN cp -pr /usr/local /out/usr/
-#RUN tree /out
 
 # Prepare debian binary package
 WORKDIR /pkg/src
 ADD debian /pkg/src/debian
 RUN cp -rp /out/* /pkg/src/
-# Create the .install file with the binaries to be installed, without leading slash
-#RUN find /out -type f | sed -e 's/^\/out\///g' > debian/kodi-rockchip-gbm.install
 RUN echo "usr/*" > debian/kodi-rockchip-gbm.install
 
 # Create the "Architecture: amd64" field in control
@@ -109,10 +106,10 @@ RUN echo "Architecture: ${OS_ARCH}" >> /pkg/src/debian/control
 RUN cat /pkg/src/debian/control
 
 # Create the Changelog, fake. The atrocities we do in dockerfiles.
-ARG PACKAGE_VERSION="20210928"
+ARG PACKAGE_VERSION="20240930"
 RUN echo "kodi-rockchip-gbm (${PACKAGE_VERSION}) stable; urgency=medium" >> /pkg/src/debian/changelog
 RUN echo "" >> /pkg/src/debian/changelog
-RUN echo "  * Not a real changelog. All built from source. Sorry." >> /pkg/src/debian/changelog
+RUN echo "  * Not a real changelog. Sorry." >> /pkg/src/debian/changelog
 RUN echo "" >> /pkg/src/debian/changelog
 RUN echo " -- Ricardo Pardini <ricardo@pardini.net>  Wed, 15 Sep 2021 14:18:33 +0200" >> /pkg/src/debian/changelog
 RUN cat /pkg/src/debian/changelog
@@ -120,9 +117,6 @@ RUN cat /pkg/src/debian/changelog
 
 # Build the package, don't sign it, don't lint it, compress fast with xz
 WORKDIR /pkg/src
-RUN tree /pkg/src
-RUN ls -laR /pkg/src
-RUN cat debian/kodi-rockchip-gbm.install
 RUN pipetty debuild --no-lintian --build=binary -us -uc -Zxz -z1 
 RUN file /pkg/*.deb
 
@@ -132,16 +126,13 @@ RUN dpkg-deb -f /pkg/*.deb || true
 
 # Install it to make sure it works
 RUN dpkg -i /pkg/*.deb
-# @TODO --versions and such
-RUN dpkg -L kodi-rockchip-gbm
+# RUN dpkg -L kodi-rockchip-gbm
 
 RUN lsb_release -a
 
-# Now prepare the real output: a tarball of /out, and the .deb for this arch.
+# Now prepare the real output: the .deb for this release and arch.
 WORKDIR /artifacts
 RUN cp -v /pkg/*.deb kodi-rockchip-gbm_${OS_ARCH}_$(lsb_release -c -s).deb
-WORKDIR /out
-RUN tar czvf /artifacts/kodi-rockchip-gbm_${OS_ARCH}_$(lsb_release -c -s).tar.gz *
 
 # Final stage is just alpine so we can start a fake container just to get at its contents using docker in GHA
 FROM alpine:3

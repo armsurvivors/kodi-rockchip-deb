@@ -20,7 +20,6 @@ jobs:
   # Setup for runner:
   # If on thin LVM: 
   #   THIN_POOL="thinvg" SIZE=100G LABEL=build_others MOUNT_POINT=/opt/build_others lvm_thin_ext4_prepare
-  # GH_RUNNER_USER="ghrunnerk8scontainerd" BASE_DIR="/opt/build_others" GH_OWNER_REPO="rpardini/kodi-rockchip-gbm" setup_github_runner
   # GH_RUNNER_USER="ghrunnerarmsurvivors" BASE_DIR="/opt/build_armsurvivors" GH_OWNER_REPO="armsurvivors" setup_github_runner
 
   build:
@@ -29,8 +28,8 @@ jobs:
     strategy:
       fail-fast: false # let other jobs try to complete if one fails
       matrix:
-        arch: [ { name: 'amd64', runner: 'ubuntu-latest' } , { name: 'arm64', runner: [ "self-hosted", "ARM64" ] } ]
-        distro: [ 'ubuntu:noble', 'debian:bookworm', 'ubuntu:jammy', 'debian:trixie' ]
+        arch: [ { name: 'arm64', runner: [ "self-hosted", "ARM64", "kodi-rockchip-deb" ] } ]
+        distro: [ 'debian:bookworm', 'ubuntu:jammy', 'ubuntu:noble', 'debian:trixie' ]
     steps:
 
       - name: Checkout
@@ -70,12 +69,6 @@ jobs:
           name: deb
           path: out/*.deb
 
-      - name: Upload tarball as artifact ${{ matrix.arch.name }} ${{ matrix.distro }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: tarball
-          path: out/*.tar.gz
-
 
   release:
     needs: [ prepare, build ] # depend on the previous jobs...
@@ -87,12 +80,6 @@ jobs:
         name: Download deb artifacts
         with:
           name: deb
-          path: out
-
-      - uses: actions/download-artifact@v3
-        name: Download tarball artifacts
-        with:
-          name: tarball
           path: out
 
       - name: List artifacts downloaded
@@ -109,7 +96,6 @@ jobs:
           title: "${{needs.prepare.outputs.created}}"
           files: |
             out/*.deb
-            out/*.tar.gz
 
       #- name: "GH latest release"
       #  uses: "marvinpinto/action-automatic-releases@latest"
