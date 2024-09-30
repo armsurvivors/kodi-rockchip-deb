@@ -1,5 +1,5 @@
 ARG BASE_IMAGE="debian:bookworm"
-FROM ${BASE_IMAGE} as packager
+FROM ${BASE_IMAGE} AS packager
 
 #### Dependencies. In batches; this is built under buildx and layers not published so we don't care about layer size.
 ENV DEBIAN_FRONTEND=noninteractive
