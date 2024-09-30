@@ -12,7 +12,7 @@ SHELL ["/bin/bash", "-e", "-c"]
 
 
 # Build stuff from source
-FROM build as mediaplayer
+FROM build as packager
 
 
 # RKMPP
@@ -57,11 +57,9 @@ RUN ./ffmpeg -filters | grep rkrga
 # Install FFmpeg to the prefix path
 RUN make install
 
-# Prepare the results in /out
-FROM build as packager
-
-WORKDIR /out/usr/local
-COPY --from=mediaplayer /usr/local .
+### ------- packaging
+WORKDIR /out/usr
+RUN cp -vpr /usr/local /out/usr/
 RUN tree /out
 
 # Prepare debian binary package
