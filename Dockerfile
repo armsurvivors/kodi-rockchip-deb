@@ -85,6 +85,8 @@ RUN cp -pr /usr/local /pkg/src/usr/
 # Prepare debian binary package
 WORKDIR /pkg/src
 ADD debian /pkg/src/debian
+# For DRM Prime enablement
+ADD userdata/guisettings.xml /pkg/src/usr/local/share/kodi/userdata/guisettings.xml 
 RUN echo "usr/*" > debian/kodi-rockchip-gbm.install
 
 # Create the "Architecture:" field in control; ARG invalidates the cache.

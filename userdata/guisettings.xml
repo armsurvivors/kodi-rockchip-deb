@@ -1,0 +1,5 @@
+<settings version="2">
+    <setting id="videoplayer.useprimedecoder">true</setting>
+    <setting id="videoplayer.useprimedecoderforhw" default="true">true</setting>
+    <setting id="videoplayer.useprimerenderer">0</setting>
+</settings>
