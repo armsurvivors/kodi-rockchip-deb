@@ -9,6 +9,12 @@ EnvironmentFile=-/etc/default/kodi-rockchip-gbm
 Environment=FFMPEG_RKMPP_DEC_OPT="afbc=on"
 Environment=HOME=/root
 ExecStart=/usr/local/bin/kodi --windowing=gbm --audio-backend=alsa
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=30
+Restart=always
+RestartSec=2
+StartLimitInterval=0
+LimitNOFILE=16384
 
 [Install]
 WantedBy=multi-user.target
