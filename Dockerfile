@@ -85,8 +85,14 @@ RUN cp -pr /usr/local /pkg/src/usr/
 # Prepare debian binary package
 WORKDIR /pkg/src
 ADD debian /pkg/src/debian
-# For DRM Prime enablement
+# For DRM Prime enablement @TODO needs smarts in init script to put in place manually.
 ADD userdata/guisettings.xml /pkg/src/usr/local/share/kodi/userdata/guisettings.xml 
+
+# For Pulseaudio, we need to add a system.pa file. This is a hack.
+# The unit file sets env PULSE_CONFIG_PATH=/usr/local/share/pulse-kodi
+WORKDIR /pkg/src/usr/local/share/pulse-kodi
+ADD pulseaudio/system.pa /pkg/src/usr/local/share/pulse-kodi/system.pa
+
 RUN echo "usr/*" > debian/kodi-rockchip-gbm.install
 
 # Create the "Architecture:" field in control; ARG invalidates the cache.
