@@ -54,7 +54,7 @@ jobs:
           push: false
           tags: kodi-rockchip-gbm:${{ matrix.arch.name }}
           cache-from: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro }}
-          cache-to: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro }}
+          cache-to: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro }},mode=max # mode=max "export all the layers of all intermediate steps"
           build-args: |
             PACKAGE_VERSION=${{needs.prepare.outputs.created}}
             BASE_IMAGE=${{ matrix.distro }}
