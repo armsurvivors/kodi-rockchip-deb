@@ -120,7 +120,7 @@ RUN dpkg-deb -I /pkg/*.deb || true
 RUN dpkg-deb -f /pkg/*.deb || true
 
 # Install it to make sure it works
-RUN dpkg -i /pkg/*.deb
+RUN apt-get install -y /pkg/*.deb
 # RUN dpkg -L kodi-rockchip-gbm
 
 RUN lsb_release -a
