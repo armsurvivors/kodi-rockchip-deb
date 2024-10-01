@@ -3,6 +3,10 @@ set -e
 
 #DEBHELPER#
 
-echo "kodi-rockchip-gbm: installed. Run 'sudo systemctl start kodi' to run, and 'sudo systemctl enable kodi' to enable at boot."
+systemctl disable --now gdm3 || true
+systemctl disable --now sddm || true
+systemctl disable --now lightdm || true
+
+echo "kodi-rockchip-gbm: installed and enabled; display managers disabled. Maybe reboot to cleanup."
 
 exit 0
