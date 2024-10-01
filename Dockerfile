@@ -85,7 +85,7 @@ RUN cp -pr /usr/local /pkg/src/usr/
 # Prepare debian binary package
 WORKDIR /pkg/src
 ADD debian /pkg/src/debian
-# For DRM Prime enablement @TODO needs smarts in init script to put in place manually.
+# For DRM Prime enablement; systemd unit copies it to .kodi/userdata on first run.
 ADD userdata/guisettings.xml /pkg/src/usr/local/share/kodi/userdata/guisettings.xml
 
 # For Pulseaudio, we need to add a system.pa file. This is a hack.

@@ -8,6 +8,8 @@ Wants=network-online.target
 EnvironmentFile=-/etc/default/kodi-rockchip-gbm
 Environment=FFMPEG_RKMPP_DEC_OPT="afbc=on"
 Environment=HOME=/root
+# Before Starting, copy the guisettings.xml file to the kodi expected location (in .kodi/userdata in $HOME) if it is not there yet; create the dir if necessary
+ExecStartPre=/bin/bash -c 'if [ ! -f $HOME/.kodi/userdata/guisettings.xml ]; then mkdir -pv $HOME/.kodi/userdata && cp -v /usr/share/kodi/system/guisettings.xml $HOME/.kodi/userdata/guisettings.xml; fi'
 ExecStart=/usr/local/bin/kodi --windowing=gbm --audio-backend=pulseaudio
 ExecStop=/bin/kill -TERM $MAINPID
 TimeoutStopSec=30
