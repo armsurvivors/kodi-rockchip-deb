@@ -22,7 +22,7 @@
 
 - Flash an Armbian CLI image for your board (`jammy`, `noble`, `bookworm`, or `trixie` for now)
     - Alternatively, you can use an Armbian desktop image, but GDM3/SDDM/LightDM will be disabled and Kodi will take over
-    - For CLI images, you still need the mesa/panfrost or mail/panfork stack
+    - For CLI images, you still need the mesa/panfrost/panthr (for vendor `6.1-rkr3`) or mail/panfork (for `5.10-rkrX`) stack
 - Download the .deb from the [releases page](https://github.com/armsurvivors/kodi-rockchip-deb/releases), apprpriate for your Armbian distro (`jammy`, `noble`, `bookworm`, or `trixie`)
 - From an SSH or console connection (not in X11 or Wayland),
     - ✅ install with `apt install ./kodi-rockchip-gbm*.deb`
