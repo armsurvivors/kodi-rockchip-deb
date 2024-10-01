@@ -29,7 +29,8 @@ jobs:
       fail-fast: false # let other jobs try to complete if one fails
       matrix:
         arch: [ { name: 'arm64', runner: [ "self-hosted", "ARM64", "kodi-rockchip-deb" ] } ]
-        distro: [ 'debian:bookworm', 'ubuntu:jammy', 'ubuntu:noble', 'debian:trixie' ]
+        #distro: [ 'debian:bookworm', 'ubuntu:jammy', 'ubuntu:noble', 'debian:trixie' ]
+        distro: [ 'ubuntu:jammy' ]
     steps:
 
       - name: Checkout
