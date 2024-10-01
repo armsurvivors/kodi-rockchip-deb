@@ -1,6 +1,6 @@
 # Warning to the reader. This produces a .deb package with stuff in /usr/local. If this scares you, stop reading.
 # It is in fact, non-debian packaging. Probably fpm would be a better choice?
-ARG BASE_IMAGE="ubuntu:jammy"
+ARG BASE_IMAGE="debian:trixie"
 FROM ${BASE_IMAGE} AS packager
 
 #### Dependencies. In batches; this is built under buildx and layers not published so we don't care about layer size.
@@ -10,18 +10,9 @@ RUN apt-get -y update && apt-get -y dist-upgrade && apt-get -y install git bash 
 RUN apt-get -y install debhelper autoconf automake autopoint gettext autotools-dev curl gawk gcc gdc gperf libtool lsb-release meson nasm ninja-build \
                python3-dev python3-pil python3-pip swig unzip uuid-dev zip 
 
-RUN apt-get -y install libasound2-dev libass-dev libavahi-client-dev \
-    libavahi-common-dev libbluetooth-dev libbluray-dev libbz2-dev libcdio-dev libcdio++-dev libp8-platform-dev libcrossguid-dev libcurl4-openssl-dev libcwiid-dev libdbus-1-dev  \
-    libegl1-mesa-dev libenca-dev libexiv2-dev libflac-dev libfmt-dev libfontconfig-dev libfreetype6-dev libfribidi-dev libfstrcmp-dev libgcrypt-dev libgif-dev \
-    libgles2-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libgnutls28-dev libgpg-error-dev libgtest-dev libiso9660-dev libjpeg-dev liblcms2-dev libltdl-dev liblzo2-dev \
-    libmicrohttpd-dev libnfs-dev libogg-dev libpcre2-dev libplist-dev libpng-dev libpulse-dev libshairplay-dev libsmbclient-dev libspdlog-dev libsqlite3-dev \
-    libssl-dev libtag1-dev libtiff5-dev libtinyxml-dev libtinyxml2-dev libudev-dev libunistring-dev libvorbis-dev  \
-    libxslt1-dev libxt-dev rapidjson-dev zlib1g-dev # Removed: libva-dev libvdpau-dev libxmu-dev libxrandr-dev libdrm-dev
-
 # Kodi GBM dependencies; also CEC and  MariaDB (not Mysql) dependencies.
 # Dependencies for ffmpeg and libdisplay-info
-RUN apt-get -y install libdrm-dev hwdata libgbm-dev libinput-dev libxkbcommon-dev libcec-dev libmariadb-dev
-RUN apt-get -y install default-jre
+RUN apt-get -y install libdrm-dev hwdata
 
 #### Git clones. Heavy stuff.
 SHELL ["/bin/bash", "-e", "-c"]
@@ -30,9 +21,6 @@ RUN git -c advice.detachedHead=false clone https://gitlab.freedesktop.org/emersi
     git -c advice.detachedHead=false clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git rkmpp && \
     git -c advice.detachedHead=false clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git rkrga && \
     git -c advice.detachedHead=false clone --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg
-
-ARG KODI_BRANCH="Omega"
-RUN git -c advice.detachedHead=false clone -b "${KODI_BRANCH}" --single-branch https://github.com/xbmc/xbmc.git kodi
 
 #### Builds
 
@@ -60,6 +48,19 @@ RUN pipetty ./configure --prefix=/usr/local --enable-gpl --enable-version3 --ena
 # Libdisplay-info, a hard dependency for kodi GBM.
 WORKDIR /src/libdisplay-info
 RUN mkdir build && cd build && meson setup --prefix=/usr/local --buildtype=release .. && ninja && ninja install
+
+## Deps for Kodi
+RUN apt-get -y install libasound2-dev libass-dev libavahi-client-dev \
+    libavahi-common-dev libbluetooth-dev libbluray-dev libbz2-dev libcdio-dev libcdio++-dev libp8-platform-dev libcrossguid-dev libcurl4-openssl-dev libcwiid-dev libdbus-1-dev  \
+    libegl1-mesa-dev libenca-dev libexiv2-dev libflac-dev libfmt-dev libfontconfig-dev libfreetype6-dev libfribidi-dev libfstrcmp-dev libgcrypt-dev libgif-dev \
+    libgles2-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libgnutls28-dev libgpg-error-dev libgtest-dev libiso9660-dev libjpeg-dev liblcms2-dev libltdl-dev liblzo2-dev \
+    libmicrohttpd-dev libnfs-dev libogg-dev libpcre2-dev libplist-dev libpng-dev libpulse-dev libshairplay-dev libsmbclient-dev libspdlog-dev libsqlite3-dev \
+    libssl-dev libtag1-dev libtiff5-dev libtinyxml-dev libtinyxml2-dev libudev-dev libunistring-dev libvorbis-dev  \
+    libxslt1-dev libxt-dev rapidjson-dev zlib1g-dev default-jre libgbm-dev libinput-dev libxkbcommon-dev libcec-dev libmariadb-dev # Removed: libva-dev libvdpau-dev libxmu-dev libxrandr-dev libdrm-dev
+# Clone Kodi; ARG invalidates the cache!
+ARG KODI_BRANCH="master"
+WORKDIR /src
+RUN git -c advice.detachedHead=false clone -b "${KODI_BRANCH}" --single-branch https://github.com/xbmc/xbmc.git kodi
 
 # Kodi itself; first, pick boogie's patches. Cherry pick the last 2 commits from boogie's branch.
 WORKDIR /src/kodi
