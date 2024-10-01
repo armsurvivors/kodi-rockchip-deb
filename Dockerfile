@@ -7,7 +7,7 @@ FROM ${BASE_IMAGE} AS packager
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -y update && apt-get -y dist-upgrade && apt-get -y install git bash wget curl build-essential devscripts debhelper pkg-config cmake meson tree colorized-logs
 # Generic Dependencies for kodi
-RUN apt-get -y install debhelper autoconf automake autopoint gettext autotools-dev cmake curl default-jre doxygen gawk gcc gdc gperf libtool lsb-release meson nasm ninja-build \
+RUN apt-get -y install debhelper autoconf automake autopoint gettext autotools-dev curl gawk gcc gdc gperf libtool lsb-release meson nasm ninja-build \
                python3-dev python3-pil python3-pip swig unzip uuid-dev zip 
 
 RUN apt-get -y install libasound2-dev libass-dev libavahi-client-dev \
@@ -29,7 +29,7 @@ RUN git -c advice.detachedHead=false clone https://gitlab.freedesktop.org/emersi
     git -c advice.detachedHead=false clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git rkmpp && \
     git -c advice.detachedHead=false clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git rkrga && \
     git -c advice.detachedHead=false clone --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg && \
-    git -c advice.detachedHead=false clone https://github.com/xbmc/xbmc.git kodi
+    git -c advice.detachedHead=false clone -b Omega --single-branch https://github.com/xbmc/xbmc.git kodi
 
 #### Builds
 
