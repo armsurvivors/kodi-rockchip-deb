@@ -12,4 +12,4 @@ Conflicts: kodi
 Description: kodi gbm for rockchip rkmpp
 Section: video
 Pre-Depends: bash (>= 4.0)
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}, pulseaudio
