@@ -1,7 +1,7 @@
 name: main-latest
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # https://github.com/armsurvivors/kodi-rockchip-deb/actions/workflows/main-latest.yml
   #push:
   #  branches: [ main ]
 
