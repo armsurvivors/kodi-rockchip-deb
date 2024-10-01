@@ -21,6 +21,7 @@ RUN apt-get -y install libasound2-dev libass-dev libavahi-client-dev \
 # Kodi GBM dependencies; also CEC and  MariaDB (not Mysql) dependencies.
 # Dependencies for ffmpeg and libdisplay-info
 RUN apt-get -y install libdrm-dev hwdata libgbm-dev libinput-dev libxkbcommon-dev libcec-dev libmariadb-dev
+RUN apt-get -y install default-jre
 
 #### Git clones. Heavy stuff.
 SHELL ["/bin/bash", "-e", "-c"]
