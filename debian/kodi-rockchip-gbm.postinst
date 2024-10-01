@@ -3,6 +3,6 @@ set -e
 
 #DEBHELPER#
 
-echo "kodi-rockchip-gbm: post-inst."
+echo "kodi-rockchip-gbm: installed. Run 'sudo systemctl start kodi' to run, and 'sudo systemctl enable kodi' to enable at boot."
 
 exit 0

@@ -7,6 +7,7 @@ Wants=network-online.target
 [Service]
 EnvironmentFile=-/etc/default/kodi-rockchip-gbm
 Environment=FFMPEG_RKMPP_DEC_OPT="afbc=on"
+Environment=HOME=/root
 ExecStart=/usr/local/bin/kodi --windowing=gbm --audio-backend=alsa
 # @TODO: hack at userdata guisettings for DRM Plane stuff somehow
 
