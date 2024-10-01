@@ -10,7 +10,7 @@ export DEB_BUILD_OPTIONS=nostrip
 
 override_dh_installsystemd:
 	dh_installsystemd --name=kodi
-	dh_installsystemd --name=pulseaudio --enable --start
+	dh_installsystemd --name=pulseaudio
 
 override_dh_usrlocal:
 	# Intentionally left blank to prevent dh_usrlocal from running. I'm *evil* and packaging stuff in /usr/local. Fire me.
