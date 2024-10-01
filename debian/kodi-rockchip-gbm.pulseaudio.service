@@ -1,0 +1,13 @@
+[Unit]
+Description=PulseAudio Sound Service for Kodi GBM
+After=syslog.target local-fs.target
+
+[Service]
+Type=dbus
+BusName=org.pulseaudio.Server
+ExecStart=/usr/bin/pulseaudio --system --disallow-exit --exit-idle-time=-1 --disable-shm --enable-memfd --realtime
+Restart=on-failure
+Environment=PULSE_CONFIG_PATH=/usr/local/share/pulse-kodi
+
+[Install]
+WantedBy=multi-user.target kodi.service

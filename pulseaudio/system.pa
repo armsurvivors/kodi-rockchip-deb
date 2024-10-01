@@ -1,0 +1,37 @@
+#!/usr/bin/pulseaudio -nF
+
+# This startup script is used only if PulseAudio is started in system
+# mode.
+
+### Load several protocols
+load-module module-native-protocol-unix
+
+### Automatically restore the volume of streams and devices
+load-module module-stream-restore
+load-module module-device-restore
+load-module module-card-restore
+
+### Automatically restore the default sink/source when changed by the user
+### during runtime
+### NOTE: This should be loaded as early as possible so that subsequent modules
+### that look up the default sink/source get the right value
+load-module module-default-device-restore
+
+### Automatically load modules for dbus
+.ifexists module-dbus-protocol.so
+ load-module module-dbus-protocol
+.endif
+
+### Automatically load modules for bluetooth
+.ifexists module-bluetooth-policy.so
+ load-module module-bluetooth-policy
+.endif
+
+.ifexists module-bluetooth-discover.so
+ load-module module-bluetooth-discover
+.endif
+
+load-module module-udev-detect
+load-module module-zeroconf-publish
+load-module module-native-protocol-tcp auth-anonymous=1
+set-default-sink alsa_output.2.stereo-fallback

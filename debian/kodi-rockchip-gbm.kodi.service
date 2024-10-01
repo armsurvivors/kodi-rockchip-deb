@@ -8,7 +8,7 @@ Wants=network-online.target
 EnvironmentFile=-/etc/default/kodi-rockchip-gbm
 Environment=FFMPEG_RKMPP_DEC_OPT="afbc=on"
 Environment=HOME=/root
-ExecStart=/usr/local/bin/kodi --windowing=gbm --audio-backend=alsa
+ExecStart=/usr/local/bin/kodi --windowing=gbm --audio-backend=pulseaudio
 ExecStop=/bin/kill -TERM $MAINPID
 TimeoutStopSec=30
 Restart=always
