@@ -1,12 +1,16 @@
 #!/bin/sh
 set -e
 
-#DEBHELPER#
-
+echo "kodi-rockchip-gbm: disabling display managers..."
 systemctl disable --now gdm3 || true
 systemctl disable --now sddm || true
 systemctl disable --now lightdm || true
 
-echo "kodi-rockchip-gbm: installed and enabled; display managers disabled. Maybe reboot to cleanup."
+echo "kodi-rockchip-gbm: configuring pulseaudio system.pa..."
+cp -v /usr/local/share/pulse-kodi/system.pa /etc/pulse/system.pa || true
+
+#DEBHELPER#
+
+echo "kodi-rockchip-gbm: installed. Run 'sudo systemctl start kodi' to run, and 'sudo systemctl enable kodi' to enable at boot."
 
 exit 0

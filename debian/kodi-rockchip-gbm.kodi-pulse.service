@@ -1,14 +1,14 @@
 [Unit]
-Description=kodi rockchip rkmpp gbm standalone via alsa
-After=network-online.target graphical.target
+Description=kodi rockchip rkmpp gbm standalone via pulse
+After=network-online.target graphical.target pulseaudio.service
 
 [Service]
 EnvironmentFile=-/etc/default/kodi-rockchip-gbm
 Environment=FFMPEG_RKMPP_DEC_OPT="afbc=on"
 Environment=HOME=/root
-# Before Starting, copy the guisettings.xml file to the kodi expected location (in .kodi/userdata in $HOME) if it is not there yet; create the dir if necessary
+Environment=PULSE_SERVER=127.0.0.1
 ExecStartPre=/bin/bash -c 'if [ ! -f $HOME/.kodi/userdata/guisettings.xml ]; then mkdir -pv $HOME/.kodi/userdata && cp -v /usr/share/kodi/system/guisettings.xml $HOME/.kodi/userdata/guisettings.xml; fi'
-ExecStart=/usr/local/bin/kodi --windowing=gbm --audio-backend=alsa
+ExecStart=/usr/local/bin/kodi --windowing=gbm --audio-backend=pulseaudio
 TimeoutStopSec=5
 Restart=always
 RestartSec=2
