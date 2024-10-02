@@ -56,7 +56,7 @@ RUN apt-get -y install libasound2-dev libass-dev libavahi-client-dev \
     libgles2-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libgnutls28-dev libgpg-error-dev libgtest-dev libiso9660-dev libjpeg-dev liblcms2-dev libltdl-dev liblzo2-dev \
     libmicrohttpd-dev libnfs-dev libogg-dev libpcre2-dev libplist-dev libpng-dev libpulse-dev libshairplay-dev libsmbclient-dev libspdlog-dev libsqlite3-dev \
     libssl-dev libtag1-dev libtiff5-dev libtinyxml-dev libtinyxml2-dev libudev-dev libunistring-dev libvorbis-dev  \
-    libxslt1-dev libxt-dev rapidjson-dev zlib1g-dev default-jre libgbm-dev libinput-dev libxkbcommon-dev libcec-dev libmariadb-dev # Removed: libva-dev libvdpau-dev libxmu-dev libxrandr-dev libdrm-dev
+    libxslt1-dev libxt-dev rapidjson-dev zlib1g-dev default-jre libgbm-dev libinput-dev libxkbcommon-dev libcec-dev libmariadb-dev liblirc-dev # Removed: libva-dev libvdpau-dev libxmu-dev libxrandr-dev libdrm-dev
 # Clone Kodi; ARG invalidates the cache!
 ARG KODI_BRANCH="master"
 WORKDIR /src
