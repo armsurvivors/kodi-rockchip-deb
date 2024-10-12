@@ -62,14 +62,6 @@ ARG KODI_BRANCH="master"
 WORKDIR /src
 RUN git -c advice.detachedHead=false clone -b "${KODI_BRANCH}" --single-branch https://github.com/xbmc/xbmc.git kodi
 
-# Kodi itself; first, pick boogie's patches. Cherry pick the last 2 commits from boogie's branch.
-WORKDIR /src/kodi
-RUN git config --global user.email "you@example.com" && git config --global user.name "Your Name" && \
-    git remote add boogie https://github.com/hbiyik/xbmc.git && \
-    git fetch boogie gbm_drm_dynamic_afbc_video_planes:gbm_drm_dynamic_afbc_video_planes && \
-    git cherry-pick gbm_drm_dynamic_afbc_video_planes~2..gbm_drm_dynamic_afbc_video_planes && \
-    git log -n 10
-
 # Kodi build. the --build step actually downloads things and that might fail, so retry it a few times.
 WORKDIR /src/kodi-build
 RUN pipetty cmake ../kodi -DCMAKE_INSTALL_PREFIX=/usr/local -DCORE_PLATFORM_NAME=gbm -DAPP_RENDER_SYSTEM=gles -DENABLE_INTERNAL_FMT=ON -DENABLE_INTERNAL_FLATBUFFERS=ON && \
