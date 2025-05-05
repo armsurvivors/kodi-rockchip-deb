@@ -28,15 +28,15 @@ jobs:
     strategy:
       fail-fast: false # let other jobs try to complete if one fails
       matrix:
-        arch: [ { name: 'arm64', runner: [ "self-hosted", "ARM64", "kodi-rockchip-deb" ] } ]
+        arch: [ { name: 'arm64', runner: "ubuntu-24.04-arm" } ]
         distro: [ 'debian:bookworm', 'ubuntu:jammy', 'ubuntu:noble', 'debian:trixie' ]
     steps:
 
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      #- name: Set up QEMU
+      #  uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         id: buildx
