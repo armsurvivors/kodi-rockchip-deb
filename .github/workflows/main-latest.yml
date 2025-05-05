@@ -29,11 +29,11 @@ jobs:
       fail-fast: false # let other jobs try to complete if one fails
       matrix:
         arch: [ { name: 'arm64', runner: "ubuntu-24.04-arm" } ]
-        distro: [ 'debian:bookworm', 'ubuntu:jammy', 'ubuntu:noble', 'debian:trixie' ]
+        distro: [ { id: 'bookworm', image: 'debian:bookworm' },  { id: 'trixie', image: 'debian:trixie' } ]
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       #- name: Set up QEMU
       #  uses: docker/setup-qemu-action@v3
@@ -42,8 +42,8 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build ${{ matrix.arch.name }} ${{ matrix.distro }}
-        uses: docker/build-push-action@v3
+      - name: Build ${{ matrix.arch.name }} ${{ matrix.distro.id }}
+        uses: docker/build-push-action@v6
         timeout-minutes: 180
         with:
           context: .
@@ -53,20 +53,20 @@ jobs:
           pull: true # bring in updated versions of preexisting GH images
           push: false
           tags: kodi-rockchip-gbm:${{ matrix.arch.name }}
-          cache-from: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro }}
-          cache-to: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro }},mode=max # mode=max "export all the layers of all intermediate steps"
+          cache-from: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro.id }}
+          cache-to: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro.id }},mode=max # mode=max "export all the layers of all intermediate steps"
           build-args: |
             PACKAGE_VERSION=${{needs.prepare.outputs.created}}
-            BASE_IMAGE=${{ matrix.distro }}
+            BASE_IMAGE=${{ matrix.distro.image }}
             OS_ARCH=${{ matrix.arch.name }}
 
-      - name: Extract artifacts from docker ${{ matrix.arch.name }} ${{ matrix.distro }}
+      - name: Extract artifacts from docker ${{ matrix.arch.name }} ${{ matrix.distro.id }}
         run: docker cp $(docker create --rm kodi-rockchip-gbm:${{ matrix.arch.name }}):/out ./
 
-      - name: Upload deb as artifact ${{ matrix.arch.name }} ${{ matrix.distro }}
-        uses: actions/upload-artifact@v3
+      - name: Upload deb as artifact ${{ matrix.arch.name }} ${{ matrix.distro.id }}
+        uses: actions/upload-artifact@v4
         with:
-          name: deb
+          name: deb-${{ matrix.distro.id }}
           path: out/*.deb
 
 
@@ -76,11 +76,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Download the built artifacts from GH artifacts.  
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         name: Download deb artifacts
         with:
-          name: deb
           path: out
+          pattern: deb-*
+          merge-multiple: true
 
       - name: List artifacts downloaded
         run: |
