@@ -32,4 +32,5 @@ load-module module-default-device-restore
 .endif
 
 load-module module-udev-detect
+#load-module module-zeroconf-publish
 load-module module-native-protocol-tcp auth-anonymous=1

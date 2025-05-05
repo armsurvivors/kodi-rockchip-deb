@@ -7,6 +7,8 @@ EnvironmentFile=-/etc/default/kodi-rockchip-gbm
 Environment=FFMPEG_RKMPP_DEC_OPT="afbc=on"
 Environment=HOME=/root
 Environment=PULSE_SERVER=127.0.0.1
+# Before Starting, copy the guisettings.xml file to the kodi expected location (in .kodi/userdata in $HOME) if it is not there yet; create the dir if necessary
+# This is required to pre-set the DRM PRIME settings so decoding works out of the box
 ExecStartPre=/bin/bash -c 'if [ ! -f $HOME/.kodi/userdata/guisettings.xml ]; then mkdir -pv $HOME/.kodi/userdata && cp -v /usr/local/share/kodi/userdata/guisettings.xml $HOME/.kodi/userdata/guisettings.xml; fi'
 ExecStart=/usr/local/bin/kodi --windowing=gbm --audio-backend=pulseaudio
 TimeoutStopSec=5
