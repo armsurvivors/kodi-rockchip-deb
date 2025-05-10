@@ -42,6 +42,9 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Prepare out dir ${{ matrix.arch.name }} ${{ matrix.distro.id }}
+        run: mkdir -p out
+
       - name: Build ${{ matrix.arch.name }} ${{ matrix.distro.id }}
         uses: docker/build-push-action@v6
         timeout-minutes: 180
@@ -59,9 +62,8 @@ jobs:
             PACKAGE_VERSION=${{needs.prepare.outputs.created}}
             BASE_IMAGE=${{ matrix.distro.image }}
             OS_ARCH=${{ matrix.arch.name }}
-
-      - name: Extract artifacts from docker ${{ matrix.arch.name }} ${{ matrix.distro.id }}
-        run: docker cp $(docker create --rm kodi-rockchip-gbm:${{ matrix.arch.name }}):/out ./
+          outputs: |
+            type=local,dest=out
 
       - name: Upload deb as artifact ${{ matrix.arch.name }} ${{ matrix.distro.id }}
         uses: actions/upload-artifact@v4

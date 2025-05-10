@@ -120,6 +120,6 @@ RUN file /pkg/*.deb && \
 WORKDIR /artifacts
 RUN cp -v /pkg/*.deb kodi-rockchip-gbm_${OS_ARCH}_$(lsb_release -c -s).deb
 
-# Final stage is just alpine so we can start a fake container just to get at its contents using docker in GHA
-FROM alpine:3
-COPY --from=packager /artifacts/* /out/
+# Final stage is just the output deb
+FROM scratch
+COPY --from=packager /artifacts/* /
