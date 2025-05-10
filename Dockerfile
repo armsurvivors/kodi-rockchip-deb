@@ -33,7 +33,7 @@ WORKDIR /src
 RUN git -c advice.detachedHead=false clone https://gitlab.freedesktop.org/emersion/libdisplay-info.git libdisplay-info && \
     git -c advice.detachedHead=false clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git rkmpp && \
     git -c advice.detachedHead=false clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git rkrga && \
-    git -c advice.detachedHead=false clone -b "7.0" --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg
+    git -c advice.detachedHead=false clone -b "7.1" --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg
 
 #### Builds
 
@@ -66,6 +66,16 @@ RUN mkdir build && cd build && meson setup --prefix=/usr/local --buildtype=relea
 ARG KODI_BRANCH="master"
 WORKDIR /src
 RUN git -c advice.detachedHead=false clone -b "${KODI_BRANCH}" --single-branch https://github.com/xbmc/xbmc.git kodi
+
+# In the beggining there was boogie PR https://github.com/xbmc/xbmc/pull/24431 -- we cherry-picked from that and life was good.
+# Then that PR got merged -- we got from master, and life was good.
+# Then, the whoile thing got reverted in https://github.com/xbmc/xbmc/pull/25864 - revision 9a6358ee823a92a2126354e0e579965c773cdff7
+# So now we revert the revert so Rockchip does the boogie again
+ARG KODI_COMMIT_TO_REVERT="9a6358ee823a92a2126354e0e579965c773cdff7"
+WORKDIR /src/kodi
+RUN git config --global user.email "you@example.com" && git config --global user.name "Your Name" && \
+    git revert -m 1 ${KODI_COMMIT_TO_REVERT} && \
+    git log -n 10
 
 # Kodi build. the --build step actually downloads things and that might fail, so retry it a few times.
 WORKDIR /src/kodi-build
