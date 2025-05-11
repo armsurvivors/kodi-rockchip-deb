@@ -1,6 +1,6 @@
 [Unit]
 Description=kodi rockchip rkmpp gbm standalone via alsa
-After=network-online.target graphical.target
+After=network-online.target
 
 [Service]
 EnvironmentFile=-/etc/default/kodi-rockchip-gbm

@@ -1,6 +1,6 @@
 [Unit]
 Description=kodi rockchip rkmpp gbm standalone via pulse
-After=network-online.target graphical.target pulseaudio.service
+After=network-online.target pulseaudio.service
 
 [Service]
 EnvironmentFile=-/etc/default/kodi-rockchip-gbm
