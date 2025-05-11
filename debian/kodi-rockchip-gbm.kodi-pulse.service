@@ -9,7 +9,8 @@ Environment=HOME=/root
 Environment=PULSE_SERVER=127.0.0.1
 # Before Starting, copy the guisettings.xml file to the kodi expected location (in .kodi/userdata in $HOME) if it is not there yet; create the dir if necessary
 # This is required to pre-set the DRM PRIME settings so decoding works out of the box
-ExecStartPre=/bin/bash -c 'if [ ! -f $HOME/.kodi/userdata/guisettings.xml ]; then mkdir -pv $HOME/.kodi/userdata && cp -v /usr/local/share/kodi/userdata/guisettings.xml $HOME/.kodi/userdata/guisettings.xml; fi'
+# Also, set required interval for mpp utilization statistics https://github.com/armbian/linux-rockchip/commit/22c5e525ac2d6f7e17a8ba4722bf99240ee027a2 - see it with watch -n 1 cat /proc/mpp_service/load
+ExecStartPre=/bin/bash -c 'echo 1000 > /proc/mpp_service/load_interval; if [ ! -f $HOME/.kodi/userdata/guisettings.xml ]; then mkdir -pv $HOME/.kodi/userdata && cp -v /usr/local/share/kodi/userdata/guisettings.xml $HOME/.kodi/userdata/guisettings.xml; fi'
 ExecStart=/usr/local/bin/kodi --windowing=gbm --audio-backend=pulseaudio
 TimeoutStopSec=5
 Restart=always
