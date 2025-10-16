@@ -19,26 +19,34 @@ RUN apt-get -y install libasound2-dev libass-dev libavahi-client-dev \
     libavahi-common-dev libbluetooth-dev libbluray-dev libbz2-dev libcdio-dev libcdio++-dev libp8-platform-dev libcrossguid-dev libcurl4-openssl-dev libcwiid-dev libdbus-1-dev  \
     libegl1-mesa-dev libenca-dev libexiv2-dev libflac-dev libfmt-dev libfontconfig-dev libfreetype6-dev libfribidi-dev libfstrcmp-dev libgcrypt-dev libgif-dev \
     libgles2-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libgnutls28-dev libgpg-error-dev libgtest-dev libiso9660-dev libjpeg-dev liblcms2-dev libltdl-dev liblzo2-dev \
-    libmicrohttpd-dev libnfs-dev libogg-dev libpcre2-dev libplist-dev libpng-dev libpulse-dev libshairplay-dev libsmbclient-dev libspdlog-dev libsqlite3-dev \
+    libmicrohttpd-dev libnfs-dev libogg-dev libpcre2-dev libplist-dev libpng-dev libpulse-dev libshairplay-dev libspdlog-dev libsqlite3-dev \
     libssl-dev libtag1-dev libtiff5-dev libtinyxml-dev libtinyxml2-dev libudev-dev libunistring-dev libvorbis-dev  \
     libxslt1-dev libxt-dev rapidjson-dev zlib1g-dev default-jre libgbm-dev libinput-dev libxkbcommon-dev libcec-dev libmariadb-dev liblirc-dev # Removed: libva-dev libvdpau-dev libxmu-dev libxrandr-dev libdrm-dev
 
+# TODO:
 # New dep for kodi in 2025?
-RUN apt-get -y install nlohmann-json3-dev
+# RUN apt-get -y install nlohmann-json3-dev
 
 
 #### Git clones. Heavy stuff.
 SHELL ["/bin/bash", "-e", "-c"]
 WORKDIR /src
-RUN git -c advice.detachedHead=false clone https://gitlab.freedesktop.org/emersion/libdisplay-info.git libdisplay-info && \
-    git -c advice.detachedHead=false clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git rkmpp && \
-    git -c advice.detachedHead=false clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git rkrga && \
-    git -c advice.detachedHead=false clone -b "7.1" --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg
+RUN git -c advice.detachedHead=false clone https://gitlab.freedesktop.org/emersion/libdisplay-info.git libdisplay-info
+RUN git -c advice.detachedHead=false clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git rkmpp
+RUN git -c advice.detachedHead=false clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git rkrga
+RUN git -c advice.detachedHead=false clone -b "6.0" --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg
 
 #### Builds
 
 # We'll build into /usr/local, so zero that out to get a clean slate. Yeah, not too smart, but it works.
 RUN rm -rfv /usr/local/*
+
+# HACK 🤮 very old pcre3 - required for Omega; Piers fixed to use libcre2, but we're building Omega
+WORKDIR /src/pcre
+RUN wget "http://deb.debian.org/debian/pool/main/p/pcre3/pcre3_8.39.orig.tar.bz2"
+RUN tar -xvf pcre3_8.39.orig.tar.bz2
+WORKDIR /src/pcre/pcre-8.39
+RUN ./configure --prefix=/usr/local && make -j$(nproc) && make install
 
 # RKMPP
 WORKDIR /src/rkmpp/rkmpp_build
@@ -74,16 +82,23 @@ WORKDIR /src
 # Clone boogie's branch
 RUN git -c advice.detachedHead=false clone -b "${BOOGIE_BRANCH}" https://github.com/hbiyik/xbmc.git kodi
 
-
 WORKDIR /src/kodi
 # Config git
 RUN git config --global user.email "you@example.com" && git config --global user.name "Your Name"
 # Rebase hbiyik's branch onto xbmc/xbmc@Omega
 RUN git remote add upstream https://github.com/xbmc/xbmc.git && git fetch upstream "${KODI_BRANCH}"
-RUN git checkout "${BOOGIE_BRANCH}"
-RUN git log -n 5
-RUN git rebase --reapply-cherry-picks "upstream/${KODI_BRANCH}"
+
+# Checkout upstream KODI_BRANCH
+RUN git checkout "upstream/${KODI_BRANCH}"
+RUN git switch -c "${KODI_BRANCH}-plus-${BOOGIE_BRANCH}"
+# Now reapply the boogie commits on top of that
+RUN git cherry-pick cfb130d42a8fce7fc6a12015e34a9df8388e47de
+RUN git cherry-pick ca63e568cf6b5d44652c1b187088c3a8f9675d0d
+RUN git cherry-pick 44966604207538e32cd40e365255828812eea51f
 RUN git log -n 10
+
+# Wait, this actually does work. TODO move to top later
+RUN apt-get -y install libsmbclient-dev
 
 # Kodi build. the --build step actually downloads things and that might fail, so retry it a few times.WORKDIR /src/kodi-build
 WORKDIR /src/kodi-build
@@ -143,7 +158,7 @@ RUN file /pkg/*.deb && \
 
 # Now prepare the real output: the .deb for this release and arch.
 WORKDIR /artifacts
-RUN cp -v /pkg/*.deb kodi-rockchip-gbm_${OS_ARCH}_$(lsb_release -c -s).deb
+RUN cp -v /pkg/*.deb kodi-${KODI_BRANCH}-rockchip-gbm_${OS_ARCH}_$(lsb_release -c -s).deb
 
 # Final stage is just the output deb
 FROM scratch
