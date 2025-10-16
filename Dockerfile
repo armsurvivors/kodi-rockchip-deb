@@ -83,6 +83,13 @@ RUN pipetty cmake ../kodi -DCMAKE_INSTALL_PREFIX=/usr/local -DCORE_PLATFORM_NAME
     pipetty cmake --build . -- -j$(nproc) || pipetty cmake --build . -- -j$(nproc) || pipetty cmake --build . -- -j$(nproc) && \
     pipetty make install
 
+# Lets build & install shadertoy addon
+WORKDIR /src
+RUN git clone --branch Omega https://github.com/xbmc/visualization.shadertoy.git
+WORKDIR /src/visualization.shadertoy/build
+RUN cmake -DADDONS_TO_BUILD=visualization.shadertoy -DADDON_SRC_PREFIX=../.. -DCMAKE_INSTALL_PREFIX=/usr/local/share/kodi/addons -DCMAKE_BUILD_TYPE=Release -DPACKAGE_ZIP=1 /src/kodi/cmake/addons
+RUN make
+
 ### ------- packaging
 
 # Drop headers for now. We don't need them in the final package.
