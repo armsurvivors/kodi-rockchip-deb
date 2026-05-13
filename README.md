@@ -1,6 +1,6 @@
 ### Warning: vendor/legacy/bsp kernel stuff
 
-`UPDATED: early May 2026 :: Status: UNKNOWN`
+`UPDATED: early May 2026 :: Status: WORKS!`
 
 - for Rockchip rk35xx devices that support rkmpp and rkrga
 - Requires either:
