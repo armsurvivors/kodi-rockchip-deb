@@ -1,6 +1,6 @@
 ### Warning: vendor/legacy/bsp kernel stuff
 
-`UPDATED: early May 2025 :: Status: WORKS AGAIN`
+`UPDATED: early May 2026 :: Status: UNKNOWN`
 
 - for Rockchip rk35xx devices that support rkmpp and rkrga
 - Requires either:
@@ -21,6 +21,7 @@
     - Then that PR got merged -- we got from master, and life was good.
     - Then, the whoile thing got reverted in https://github.com/xbmc/xbmc/pull/25864
     - So now we revert the revert so Rockchip does the boogie again
+    - May'2026: boogie/reardonia/chewitt at-it again, see https://github.com/xbmc/xbmc/pull/27402 - using plain `master` again
 - ffmpeg-rockchip 7.1 from nyanmisaka
 - fully accelerated (`GBM`+`rkmpp`+`rkrga`+`AFBC`),
   see https://github.com/nyanmisaka/ffmpeg-rockchip/wiki/Rendering#kodi-under-gbm
@@ -39,7 +40,7 @@
       `dmesg --color=always | grep panthor`
         - Ensure you've the required Mali firmware, it should be present in `apt install armbian-firmware` which is
           installed by default
-- Download the .deb from the [releases page](https://github.com/armsurvivors/kodi-rockchip-deb/releases), apprpriate for your Armbian distro (`bookworm`, or `trixie`)
+- Download the .deb from the [releases page](https://github.com/armsurvivors/kodi-rockchip-deb/releases), appropriate for your Armbian distro (`bookworm`, or `trixie`)
 - From an SSH or console connection (not in X11 or Wayland),
     - ✅ install with `apt install ./kodi-rockchip-gbm*.deb` - it will download a ton of dependencies
     - ❌ `dpkg -i` won't work as it doesn't pull dependencies

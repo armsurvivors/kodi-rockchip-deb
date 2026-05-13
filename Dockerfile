@@ -8,7 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -y update && apt-get -y dist-upgrade && apt-get -y install git bash wget curl build-essential devscripts debhelper pkg-config cmake meson tree colorized-logs
 # Generic Dependencies for kodi
 RUN apt-get -y install debhelper autoconf automake autopoint gettext autotools-dev curl gawk gcc gdc gperf libtool lsb-release meson nasm ninja-build \
-               python3-dev python3-pil python3-pip swig unzip uuid-dev zip 
+               python3-dev python3-pil python3-pip swig unzip uuid-dev zip
 
 # Kodi GBM dependencies; also CEC and  MariaDB (not Mysql) dependencies.
 # Dependencies for ffmpeg and libdisplay-info
@@ -71,11 +71,7 @@ RUN git -c advice.detachedHead=false clone -b "${KODI_BRANCH}" --single-branch h
 # Then that PR got merged -- we got from master, and life was good.
 # Then, the whoile thing got reverted in https://github.com/xbmc/xbmc/pull/25864 - revision 9a6358ee823a92a2126354e0e579965c773cdff7
 # So now we revert the revert so Rockchip does the boogie again
-ARG KODI_COMMIT_TO_REVERT="9a6358ee823a92a2126354e0e579965c773cdff7"
-WORKDIR /src/kodi
-RUN git config --global user.email "you@example.com" && git config --global user.name "Your Name" && \
-    git revert -m 1 ${KODI_COMMIT_TO_REVERT} && \
-    git log -n 10
+# May'2026: boogie/reardonia/chewitt at it again: https://github.com/xbmc/xbmc/pull/27402 et al - thus plain "master"
 
 # Kodi build. the --build step actually downloads things and that might fail, so retry it a few times.
 WORKDIR /src/kodi-build
@@ -115,7 +111,7 @@ ARG OS_ARCH="arm64"
 RUN echo "Architecture: ${OS_ARCH}" >> /pkg/src/debian/control
 
 # Create the Changelog, fake. ARG here invalidates the cache.
-ARG PACKAGE_VERSION="20250505"
+ARG PACKAGE_VERSION="20260513"
 RUN echo "kodi-rockchip-gbm (${PACKAGE_VERSION}) stable; urgency=medium" >> /pkg/src/debian/changelog && \
     echo "" >> /pkg/src/debian/changelog && \
     echo "  * Not a real changelog. Sorry." >> /pkg/src/debian/changelog && \
@@ -125,7 +121,7 @@ RUN echo "kodi-rockchip-gbm (${PACKAGE_VERSION}) stable; urgency=medium" >> /pkg
 
 # Build the package, don't sign it, don't lint it, compress fast with xz
 WORKDIR /pkg/src
-RUN pipetty debuild --no-lintian --build=binary -us -uc -Zxz -z1 
+RUN pipetty debuild --no-lintian --build=binary -us -uc -Zxz -z1
 
 # Show package info
 RUN file /pkg/*.deb && \
