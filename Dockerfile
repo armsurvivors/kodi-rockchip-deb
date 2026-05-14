@@ -67,6 +67,11 @@ ARG KODI_BRANCH="master"
 WORKDIR /src
 RUN git -c advice.detachedHead=false clone -b "${KODI_BRANCH}" --single-branch https://github.com/xbmc/xbmc.git kodi
 
+# Add some quality of life patches, taken from LibreELEC.
+ADD patches /src/patches
+WORKDIR /src/kodi
+RUN for p in /src/patches/kodi/*.patch; do echo "Applying patch ${p} ..."; patch -p1 < "$p"; done
+
 # In the beggining there was boogie PR https://github.com/xbmc/xbmc/pull/24431 -- we cherry-picked from that and life was good.
 # Then that PR got merged -- we got from master, and life was good.
 # Then, the whoile thing got reverted in https://github.com/xbmc/xbmc/pull/25864 - revision 9a6358ee823a92a2126354e0e579965c773cdff7

@@ -55,9 +55,9 @@
 
 ## TO-DO
 
-- [ ] Don't run as root
-- [ ] Don't expose Pulseaudio to the network
-- [ ] Fix MCE Remote OK/Back buttons (Q: is it 2011 again? A: no, it's just LibreELEC is more awesome.)
+- [ ] Don't run as root via systemd
+- [ ] Don't expose Pulseaudio to the network 
+- [x] Fix MCE Remote OK/Back buttons (via LibreELEC patches)
 
 ## Building
 
