@@ -5,7 +5,7 @@ FROM ${BASE_IMAGE} AS packager
 
 #### Dependencies. In batches; this is built under buildx and layers not published so we don't care about layer size.
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get -y update && apt-get -y dist-upgrade && apt-get -y install git bash wget curl build-essential devscripts debhelper pkg-config cmake meson tree colorized-logs
+RUN apt-get -y update && apt-get -y dist-upgrade && apt-get -y install git bash wget curl build-essential devscripts debhelper pkg-config cmake meson tree
 # Generic Dependencies for kodi
 RUN apt-get -y install debhelper autoconf automake autopoint gettext autotools-dev curl gawk gcc gdc gperf libtool lsb-release meson nasm ninja-build \
                python3-dev python3-pil python3-pip swig unzip uuid-dev zip
@@ -42,21 +42,21 @@ RUN rm -rfv /usr/local/*
 
 # RKMPP
 WORKDIR /src/rkmpp/rkmpp_build
-RUN pipetty cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_TEST=OFF .. && \
-    pipetty make -j$(nproc) && \
-    pipetty make install
+RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_TEST=OFF .. && \
+    make -j$(nproc) && \
+    make install
 
 # RKRGA
 WORKDIR /src
 RUN meson setup rkrga rkrga_build --prefix=/usr/local --libdir=lib --buildtype=release --default-library=shared -Dcpp_args=-fpermissive -Dlibdrm=false -Dlibrga_demo=false && \
     meson configure rkrga_build && \
-    pipetty ninja -C rkrga_build install
+    ninja -C rkrga_build install
 
 # ffmpeg, with rkxxx stuff. Nyanmisaka's fork, full of boogie goodness. You folks rock.
 WORKDIR /src/ffmpeg
-RUN pipetty ./configure --prefix=/usr/local --enable-gpl --enable-version3 --enable-libdrm --enable-rkmpp --enable-rkrga && \
-    pipetty make -j $(nproc) && \
-    pipetty make install
+RUN ./configure --prefix=/usr/local --enable-gpl --enable-version3 --enable-libdrm --enable-rkmpp --enable-rkrga && \
+    make -j $(nproc) && \
+    make install
 
 # Libdisplay-info, a hard dependency for kodi GBM.
 WORKDIR /src/libdisplay-info
@@ -75,16 +75,30 @@ RUN git -c advice.detachedHead=false clone -b "${KODI_BRANCH}" --single-branch h
 
 # Kodi build. the --build step actually downloads things and that might fail, so retry it a few times.
 WORKDIR /src/kodi-build
-RUN pipetty cmake ../kodi -DCMAKE_INSTALL_PREFIX=/usr/local -DCORE_PLATFORM_NAME=gbm -DAPP_RENDER_SYSTEM=gles -DENABLE_INTERNAL_FMT=ON -DENABLE_INTERNAL_FLATBUFFERS=ON && \
-    pipetty cmake --build . -- -j$(nproc) || pipetty cmake --build . -- -j$(nproc) || pipetty cmake --build . -- -j$(nproc) && \
-    pipetty make install
+RUN cmake ../kodi -DCMAKE_INSTALL_PREFIX=/usr/local -DCORE_PLATFORM_NAME=gbm -DAPP_RENDER_SYSTEM=gles -DENABLE_INTERNAL_FMT=ON -DENABLE_INTERNAL_FLATBUFFERS=ON && \
+    cmake --build . -- -j$(nproc) || cmake --build . -- -j$(nproc) || cmake --build . -- -j$(nproc) && \
+    make install
 
-# Lets build & install shadertoy addon
+# Lets build & install shadertoy visualization addon
 WORKDIR /src
-RUN git clone --branch Omega https://github.com/xbmc/visualization.shadertoy.git
+RUN git clone --branch Piers https://github.com/xbmc/visualization.shadertoy.git
 WORKDIR /src/visualization.shadertoy/build
 RUN cmake -DADDONS_TO_BUILD=visualization.shadertoy -DADDON_SRC_PREFIX=../.. -DCMAKE_INSTALL_PREFIX=/usr/local/share/kodi/addons -DCMAKE_BUILD_TYPE=Release -DPACKAGE_ZIP=1 /src/kodi/cmake/addons
 RUN make
+
+# Lets build & install shadertoy screensaver addon
+WORKDIR /src
+RUN git clone --branch Piers https://github.com/xbmc/screensaver.shadertoy.git
+WORKDIR /src/screensaver.shadertoy/build
+RUN cmake -DADDONS_TO_BUILD=screensaver.shadertoy -DADDON_SRC_PREFIX=../.. -DCMAKE_INSTALL_PREFIX=/usr/local/share/kodi/addons -DCMAKE_BUILD_TYPE=Release -DPACKAGE_ZIP=1 /src/kodi/cmake/addons
+RUN make
+
+# Lets preinstall the Jellyfin Kodi repository add-on, just for convenience
+WORKDIR /usr/local/share/kodi/addons
+RUN wget "https://kodi.jellyfin.org/repository.jellyfin.kodi.zip"
+RUN unzip repository.jellyfin.kodi.zip
+RUN rm repository.jellyfin.kodi.zip
+RUN ls -lah /usr/local/share/kodi/addons /usr/local/share/kodi/addons/repository.jellyfin.kodi
 
 ### ------- packaging
 
@@ -121,7 +135,7 @@ RUN echo "kodi-rockchip-gbm (${PACKAGE_VERSION}) stable; urgency=medium" >> /pkg
 
 # Build the package, don't sign it, don't lint it, compress fast with xz
 WORKDIR /pkg/src
-RUN pipetty debuild --no-lintian --build=binary -us -uc -Zxz -z1
+RUN debuild --no-lintian --build=binary -us -uc -Zxz -z1
 
 # Show package info
 RUN file /pkg/*.deb && \

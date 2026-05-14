@@ -2,9 +2,9 @@
 set -e
 
 echo "kodi-rockchip-gbm: disabling display managers..."
-systemctl disable --now gdm3 || true
-systemctl disable --now sddm || true
-systemctl disable --now lightdm || true
+systemctl disable --now gdm3 > /dev/null 2>&1 || true
+systemctl disable --now sddm > /dev/null 2>&1 || true
+systemctl disable --now lightdm > /dev/null 2>&1 || true
 
 echo "kodi-rockchip-gbm: configuring pulseaudio system.pa..."
 cp -v /usr/local/share/pulse-kodi/system.pa /etc/pulse/system.pa || true
