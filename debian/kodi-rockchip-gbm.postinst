@@ -6,8 +6,11 @@ systemctl disable --now gdm3 > /dev/null 2>&1 || true
 systemctl disable --now sddm > /dev/null 2>&1 || true
 systemctl disable --now lightdm > /dev/null 2>&1 || true
 
-echo "kodi-rockchip-gbm: configuring pulseaudio system.pa..."
-cp -v /usr/local/share/pulse-kodi/system.pa /etc/pulse/system.pa || true
+if [ ! -f /etc/pulse/system.pa ]; then
+	echo "kodi-rockchip-gbm: configuring pulseaudio system.pa..."
+	mkdir -p /etc/pulse || true
+	cp -v /usr/local/share/pulse-kodi/system.pa /etc/pulse/system.pa || true
+fi
 
 #DEBHELPER#
 

@@ -13,6 +13,12 @@
 > mainline Kodi for rk35xx hwaccel Rockchip's MPP and RGA via ffmpeg-rockchip, via boogie/nyanmisaka/joshua/amazingfate
 > magic; rk bsp/vendor/legacy kernel required.
 
+Understand: this is meant to be installed on a CLI/server Armbian image, and will disable any display manager (GDM3/SDDM/LightDM) to take over the display itself.
+Also, it's not a proper Debian package as it deploys to /usr/local. The sample systemd units run as root. 
+Using a vendor kernel like Rockchip's has inherent security implications.
+
+- For mainline work see LibreELEC.tv
+
 #### Features
 
 - mainline Kodi

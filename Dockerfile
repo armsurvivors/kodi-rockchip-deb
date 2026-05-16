@@ -114,8 +114,8 @@ RUN rm -rf /usr/local/include && cp -pr /usr/local /pkg/src/usr/
 # Prepare debian binary package
 WORKDIR /pkg/src
 ADD debian /pkg/src/debian
-# For DRM Prime enablement; systemd unit copies it to .kodi/userdata on first run.
-ADD userdata/guisettings.xml /pkg/src/usr/local/share/kodi/userdata/guisettings.xml
+# Example GUI settings. This is probably old and unuseful these days.
+ADD userdata/guisettings.xml /pkg/src/usr/local/share/kodi/example_userdata_guisettings.xml
 
 # For Pulseaudio, we need to add a system.pa file. This is a hack.
 # The unit file sets env PULSE_CONFIG_PATH=/usr/local/share/pulse-kodi
