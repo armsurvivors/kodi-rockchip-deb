@@ -29,7 +29,7 @@ Using a vendor kernel like Rockchip's has inherent security implications.
     - So now we revert the revert so Rockchip does the boogie again
     - May'2026: boogie/reardonia/chewitt at-it again, see https://github.com/xbmc/xbmc/pull/27402 - using plain `master` again
 - ffmpeg-rockchip 7.1 from nyanmisaka
-- fully accelerated (`GBM`+`rkmpp`+`rkrga`+`AFBC`),
+- fully accelerated (`GBM`+`rkmpp`+`rkrga`),
   see https://github.com/nyanmisaka/ffmpeg-rockchip/wiki/Rendering#kodi-under-gbm
     - > _This type of rendering is the fastest method you can get. To run kodi with gbm support, the active Desktop
       Environment must be stopped so that Kodi can directly interact with KMS_

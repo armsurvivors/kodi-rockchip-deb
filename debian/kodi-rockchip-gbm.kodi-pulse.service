@@ -4,7 +4,6 @@ After=network-online.target pulseaudio.service
 
 [Service]
 EnvironmentFile=-/etc/default/kodi-rockchip-gbm
-Environment=FFMPEG_RKMPP_DEC_OPT="afbc=on"
 Environment=HOME=/root
 Environment=PULSE_SERVER=127.0.0.1
 # Also, set required interval for mpp utilization statistics https://github.com/armbian/linux-rockchip/commit/22c5e525ac2d6f7e17a8ba4722bf99240ee027a2 - see it with watch -n 1 cat /proc/mpp_service/load
