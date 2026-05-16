@@ -53,6 +53,7 @@ Using a vendor kernel like Rockchip's has inherent security implications.
     - ℹ️ during install, it will disable your display manager if you have one running
 - Start the service with `sudo systemctl start kodi`
     - `kodi` service uses ALSA directly, look around for the PulseAudio version (`kodi-pulse`) if you prefer that
+- Configure Kodi in Player > Videos, set DRM Prime and HW accel and render "Direct to Plane"
 
 ### Troubleshooting
 

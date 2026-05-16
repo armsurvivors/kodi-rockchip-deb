@@ -28,6 +28,10 @@ jobs:
           - { id: 'bookworm', image: 'debian:bookworm' }
           - { id: 'trixie', image: 'debian:trixie' }
           - { id: 'forky', image: 'debian:forky' }
+        ffmpeg:
+          - { branch: '7.1', id: '71' }
+          - { branch: '8.0', id: '80' }
+          - { branch: '8.1', id: '81' }
     steps:
 
       - name: Checkout
@@ -57,13 +61,15 @@ jobs:
             PACKAGE_VERSION=${{needs.prepare.outputs.created}}
             BASE_IMAGE=${{ matrix.distro.image }}
             OS_ARCH=${{ matrix.arch.name }}
+            FFMPEG_BRANCH=${{ matrix.ffmpeg.branch }}
+            FFMPEG_ID=${{ matrix.ffmpeg.id }}
           outputs: |
             type=local,dest=out
 
       - name: Upload deb as artifact ${{ matrix.arch.name }} ${{ matrix.distro.id }}
         uses: actions/upload-artifact@v7
         with:
-          name: deb-${{ matrix.distro.id }}
+          name: deb-${{ matrix.distro.id }}-ffmpeg-${{ matrix.ffmpeg.id }}
           path: out/*.deb
 
 

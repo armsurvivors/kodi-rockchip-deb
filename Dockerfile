@@ -28,12 +28,13 @@ RUN apt-get -y install nlohmann-json3-dev
 
 
 #### Git clones. Heavy stuff.
+ARG FFMPEG_BRANCH="7.1"
 SHELL ["/bin/bash", "-e", "-c"]
 WORKDIR /src
 RUN git -c advice.detachedHead=false clone https://gitlab.freedesktop.org/emersion/libdisplay-info.git libdisplay-info && \
     git -c advice.detachedHead=false clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git rkmpp && \
     git -c advice.detachedHead=false clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git rkrga && \
-    git -c advice.detachedHead=false clone -b "8.1" --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg
+    git -c advice.detachedHead=false clone -b "${FFMPEG_BRANCH}" --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg
 
 #### Builds
 
@@ -66,6 +67,8 @@ RUN mkdir build && cd build && meson setup --prefix=/usr/local --buildtype=relea
 ARG KODI_BRANCH="master"
 WORKDIR /src
 RUN git -c advice.detachedHead=false clone -b "${KODI_BRANCH}" --single-branch https://github.com/xbmc/xbmc.git kodi
+WORKDIR /src/kodi
+RUN git rev-parse HEAD
 
 # Add some quality of life patches, taken from LibreELEC.
 ADD patches /src/patches
@@ -131,7 +134,8 @@ RUN echo "Architecture: ${OS_ARCH}" >> /pkg/src/debian/control
 
 # Create the Changelog, fake. ARG here invalidates the cache.
 ARG PACKAGE_VERSION="20260513"
-RUN echo "kodi-rockchip-gbm (${PACKAGE_VERSION}) stable; urgency=medium" >> /pkg/src/debian/changelog && \
+ARG FFMPEG_ID="71"
+RUN echo "kodi-rockchip-gbm (${PACKAGE_VERSION}-kodi-${KODI_BRANCH}-ffmpeg-${FFMPEG_ID}) stable; urgency=medium" >> /pkg/src/debian/changelog && \
     echo "" >> /pkg/src/debian/changelog && \
     echo "  * Not a real changelog. Sorry." >> /pkg/src/debian/changelog && \
     echo "" >> /pkg/src/debian/changelog && \
@@ -150,7 +154,7 @@ RUN file /pkg/*.deb && \
 
 # Now prepare the real output: the .deb for this release and arch.
 WORKDIR /artifacts
-RUN cp -v /pkg/*.deb kodi-rockchip-gbm_${OS_ARCH}_$(lsb_release -c -s).deb
+RUN cp -v /pkg/*.deb kodi-rockchip-gbm_${OS_ARCH}_kodi_${KODI_BRANCH}_ffmpeg_${FFMPEG_ID}_$(lsb_release -c -s).deb
 
 # Final stage is just the output deb
 FROM scratch
