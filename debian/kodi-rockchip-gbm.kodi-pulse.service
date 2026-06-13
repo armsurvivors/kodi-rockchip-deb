@@ -8,7 +8,7 @@ Environment=HOME=/root
 Environment=PULSE_SERVER=127.0.0.1
 # Also, set required interval for mpp utilization statistics https://github.com/armbian/linux-rockchip/commit/22c5e525ac2d6f7e17a8ba4722bf99240ee027a2 - see it with watch -n 1 cat /proc/mpp_service/load
 ExecStartPre=/bin/bash -c 'echo 1000 > /proc/mpp_service/load_interval;'
-ExecStart=/usr/local/bin/kodi --windowing=gbm --audio-backend=pulseaudio
+ExecStart=/usr/local/bin/kodi --logging=console --windowing=gbm --audio-backend=pulseaudio
 TimeoutStopSec=5
 Restart=always
 RestartSec=2
