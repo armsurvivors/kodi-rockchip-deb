@@ -34,6 +34,7 @@ WORKDIR /src
 RUN git -c advice.detachedHead=false clone https://gitlab.freedesktop.org/emersion/libdisplay-info.git libdisplay-info && \
     git -c advice.detachedHead=false clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git rkmpp && \
     git -c advice.detachedHead=false clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git rkrga && \
+    git -c advice.detachedHead=false clone -b 1.5.3 --depth=1 https://code.videolan.org/videolan/dav1d.git dav1d && \
     git -c advice.detachedHead=false clone -b "${FFMPEG_BRANCH}" --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg
 
 #### Builds
@@ -53,11 +54,24 @@ RUN meson setup rkrga rkrga_build --prefix=/usr/local --libdir=lib --buildtype=r
     meson configure rkrga_build && \
     ninja -C rkrga_build install
 
+# dav1d: fast software AV1 decoder, built from source. Enables AV1 software fallback in ffmpeg.
+# h264/hevc/vp9 software decoders are already native to ffmpeg; AV1's native decoder is too slow, so we bring dav1d.
+WORKDIR /src/dav1d
+RUN meson setup build --prefix=/usr/local --libdir=lib --buildtype=release --default-library=shared -Denable_tools=false -Denable_tests=false && \
+    ninja -C build install
+
 # ffmpeg, with rkxxx stuff. Nyanmisaka's fork, full of boogie goodness. You folks rock.
+# Software decode: native h264/hevc/vp9 (default) + libdav1d for AV1. Hardware decode: rkmpp. SIMD asm (NEON) is on by default on aarch64.
 WORKDIR /src/ffmpeg
-RUN ./configure --prefix=/usr/local --enable-gpl --enable-version3 --enable-libdrm --enable-rkmpp --enable-rkrga && \
+RUN ./configure --prefix=/usr/local --enable-gpl --enable-version3 --enable-libdrm --enable-rkmpp --enable-rkrga --enable-libdav1d && \
     make -j $(nproc) && \
-    make install
+    make install && \
+    LD_LIBRARY_PATH=/usr/local/lib /usr/local/bin/ffmpeg -hide_banner -decoders | tee /tmp/decoders.txt && \
+    for d in h264 hevc vp9 av1 libdav1d h264_rkmpp hevc_rkmpp vp9_rkmpp av1_rkmpp; do \
+      grep -qw "$d" /tmp/decoders.txt || { echo "MISSING DECODER: $d"; exit 1; }; \
+    done && \
+    echo "All expected decoders present." && \
+    { LD_LIBRARY_PATH=/usr/local/lib /usr/local/bin/ffmpeg -hide_banner -buildconf | grep -q -- '--disable-asm' && { echo "ERROR: ffmpeg asm disabled"; exit 1; }; } || echo "ffmpeg asm enabled."
 
 # Libdisplay-info, a hard dependency for kodi GBM.
 WORKDIR /src/libdisplay-info
