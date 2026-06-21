@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+set -e
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT="${SRC}/out"
 mkdir -p "${OUTPUT}"
