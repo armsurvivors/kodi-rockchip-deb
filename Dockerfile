@@ -28,7 +28,7 @@ RUN apt-get -y install nlohmann-json3-dev
 
 
 #### Git clones. Heavy stuff.
-ARG FFMPEG_BRANCH="7.1"
+ARG FFMPEG_BRANCH="8.1"
 SHELL ["/bin/bash", "-e", "-c"]
 WORKDIR /src
 RUN git -c advice.detachedHead=false clone https://gitlab.freedesktop.org/emersion/libdisplay-info.git libdisplay-info && \
@@ -134,7 +134,7 @@ RUN echo "Architecture: ${OS_ARCH}" >> /pkg/src/debian/control
 
 # Create the Changelog, fake. ARG here invalidates the cache.
 ARG PACKAGE_VERSION="20260513"
-ARG FFMPEG_ID="71"
+ARG FFMPEG_ID="81"
 RUN echo "kodi-rockchip-gbm (${PACKAGE_VERSION}-kodi-${KODI_BRANCH}-ffmpeg-${FFMPEG_ID}) stable; urgency=medium" >> /pkg/src/debian/changelog && \
     echo "" >> /pkg/src/debian/changelog && \
     echo "  * Not a real changelog. Sorry." >> /pkg/src/debian/changelog && \
