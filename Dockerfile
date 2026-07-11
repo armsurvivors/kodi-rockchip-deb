@@ -170,6 +170,20 @@ RUN file /pkg/*.deb && \
 WORKDIR /artifacts
 RUN cp -v /pkg/*.deb kodi-rockchip-gbm_${OS_ARCH}_kodi_${KODI_BRANCH}_ffmpeg_${FFMPEG_ID}_$(lsb_release -c -s).deb
 
+# An intermediate stage, which is just the base image + the installed built package.
+# Who wouldn't want to run Kodi in a container?
+# Lets avoid a layer with the .deb as that is huge.
+FROM ${BASE_IMAGE} AS containerized-kodi
+
+# Install the built package. Bind-mount the .deb from the packager stage so it's
+# only present during this RUN and never ends up in a published layer.
+ENV DEBIAN_FRONTEND=noninteractive
+RUN --mount=type=bind,from=packager,source=/artifacts,target=/debs \
+    apt-get -y update && \
+    apt-get -y install /debs/*.deb && \
+    rm -rf /var/lib/apt/lists/*
+
+
 # Final stage is just the output deb
 FROM scratch
 COPY --from=packager /artifacts/* /
