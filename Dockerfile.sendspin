@@ -1,0 +1,39 @@
+# Standalone Sendspin (formerly "Resonate") multi-room audio daemon, installed via uv.
+# Companion to the kodi-rockchip-gbm container: plays synchronized audio from a Sendspin server.
+# https://github.com/Sendspin/sendspin-cli -- installed as a uv tool from PyPI (package: sendspin).
+# Independent from the main Dockerfile.
+ARG BASE_IMAGE="debian:trixie"
+FROM ${BASE_IMAGE} AS sendspin
+
+ENV DEBIAN_FRONTEND=noninteractive
+# Runtime audio libs: libportaudio2 is sendspin's audio backend; libpulse0 + the alsa->pulse
+# plugin let it output to a PulseAudio daemon (see Dockerfile.pulseaudio). "or whatever" indeed.
+RUN apt-get -y update && apt-get -y dist-upgrade && \
+    apt-get -y install --no-install-recommends \
+      ca-certificates libportaudio2 libpulse0 pulseaudio-utils libasound2-plugins && \
+    rm -rf /var/lib/apt/lists/*
+
+# uv: Astral's Python package/tool manager, straight from the official image.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+
+# Install the sendspin CLI as a uv tool. uv fetches its own managed CPython (needs >= 3.12),
+# so nothing here depends on the distro's python. Tool entrypoints land on PATH in /usr/local/bin.
+ENV UV_TOOL_BIN_DIR=/usr/local/bin \
+    UV_TOOL_DIR=/opt/uv/tools \
+    UV_PYTHON_INSTALL_DIR=/opt/uv/python
+RUN uv tool install --python 3.13 sendspin && \
+    sendspin --version
+
+RUN sendspin --version
+RUN which sendspin
+
+# ARG invalidates the cache; surfaced as an OCI label for provenance.
+ARG PACKAGE_VERSION="dev"
+LABEL org.opencontainers.image.title="sendspin" \
+      org.opencontainers.image.description="Sendspin multi-room audio daemon (via uv), companion to kodi-rockchip-gbm" \
+      org.opencontainers.image.version="${PACKAGE_VERSION}"
+
+# Headless background daemon; append flags at runtime, e.g. --name kodi --audio-device pulse --interface <ip>.
+# Needs host networking for mDNS discovery of the Sendspin server:
+#   nerdctl run -it --network host <image> --name kodi
+ENTRYPOINT ["sendspin", "daemon"]

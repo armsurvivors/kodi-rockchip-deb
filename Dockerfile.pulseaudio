@@ -1,0 +1,27 @@
+# Standalone PulseAudio system-mode daemon container. Companion to the kodi-rockchip-gbm container.
+# Runs pulseaudio in --system mode so the kodi container (or the sendspin daemon) can play audio
+# over the anonymous unix socket / native TCP (127.0.0.1), matching the kodi .deb's pulseaudio unit.
+# Independent from the main Dockerfile; shares nothing but the pulseaudio/system.pa config file.
+ARG BASE_IMAGE="debian:trixie"
+FROM ${BASE_IMAGE} AS pulseaudio
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get -y update && \
+    apt-get -y install --no-install-recommends \
+      pulseaudio pulseaudio-utils  \
+      libasound2-plugins  && \
+    rm -rf /var/lib/apt/lists/*
+
+# Reuse the exact same system.pa the kodi .deb ships (module-native-protocol-unix/-tcp, anonymous).
+COPY pulseaudio/system.pa /etc/pulse/system.pa
+
+# ARG invalidates the cache; surfaced as an OCI label for provenance.
+ARG PACKAGE_VERSION="dev"
+LABEL org.opencontainers.image.title="pulseaudio-kodi" \
+      org.opencontainers.image.description="PulseAudio system daemon, companion to kodi-rockchip-gbm" \
+      org.opencontainers.image.version="${PACKAGE_VERSION}"
+
+# Same invocation as debian/kodi-rockchip-gbm.pulseaudio.service; log to stderr for container logs.
+# Run with e.g.: nerdctl run -it --privileged --network host -v /dev:/dev -v /run:/run <image>
+ENTRYPOINT ["/usr/bin/pulseaudio"]
+CMD ["--system", "--disallow-exit", "--exit-idle-time=-1", "--disable-shm", "--enable-memfd", "--realtime", "--log-target=stderr"]
