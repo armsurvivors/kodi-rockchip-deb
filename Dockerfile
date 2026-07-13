@@ -180,7 +180,7 @@ FROM ${BASE_IMAGE} AS containerized-kodi
 ENV DEBIAN_FRONTEND=noninteractive
 RUN --mount=type=bind,from=packager,source=/artifacts,target=/debs \
     apt-get -y update && \
-    apt-get -y install /debs/*.deb pulseaudio-utils && \
+    apt-get -y install /debs/*.deb pulseaudio-utils ir-keytable && \
     rm -rf /var/lib/apt/lists/*
 
 
