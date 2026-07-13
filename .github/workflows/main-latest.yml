@@ -95,7 +95,7 @@ jobs:
           load: false
           pull: false
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ matrix.distro.id }}-latest
+          tags: ghcr.io/${{ github.repository }}:${{ matrix.distro.id }}-latest,ghcr.io/${{ github.repository }}:${{ matrix.distro.id }}-${{needs.prepare.outputs.created}}
           build-args: |
             PACKAGE_VERSION=${{needs.prepare.outputs.created}}
             BASE_IMAGE=${{ matrix.distro.image }}
