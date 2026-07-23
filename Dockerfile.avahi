@@ -1,0 +1,17 @@
+# Standalone Avahi system-mode daemon container. Companion to the kodi-rockchip-gbm container.
+ARG BASE_IMAGE="debian:trixie"
+FROM ${BASE_IMAGE} AS avahi
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get -y update && \
+    apt-get -y install --no-install-recommends avahi-daemon avahi-utils libnss-mdns && \
+    rm -rf /var/lib/apt/lists/*
+
+# ARG invalidates the cache; surfaced as an OCI label for provenance.
+ARG PACKAGE_VERSION="dev"
+LABEL org.opencontainers.image.title="avahi-kodi" \
+      org.opencontainers.image.description="Avahi system daemon, companion to kodi-rockchip-gbm" \
+      org.opencontainers.image.version="${PACKAGE_VERSION}"
+
+# Run with e.g.: nerdctl run -it --privileged --network host -v /dev:/dev -v /run:/run <image>
+ENTRYPOINT ["/usr/sbin/avahi-daemon"]
