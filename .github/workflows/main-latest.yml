@@ -35,10 +35,11 @@ jobs:
           #- { id: 'bookworm', image: 'debian:bookworm' }
           - { id: 'trixie', image: 'debian:trixie' }
           - { id: 'forky', image: 'debian:forky' }
+          - { id: 'resolute', image: 'ubuntu:resolute' }
         ffmpeg:
-          #- { branch: '7.1', id: '71' }
-          #- { branch: '8.0', id: '80' }
           - { branch: '8.1', id: '81' }
+        dav1d:
+          - { branch: '1.5.4', id: '154' }
     steps:
 
       - name: Checkout
@@ -62,14 +63,14 @@ jobs:
           pull: true # bring in updated versions of preexisting GH images
           push: false
           tags: kodi-rockchip-gbm:${{ matrix.arch.name }}
-          #cache-from: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro.id }}
-          #cache-to: type=gha,scope=${{ matrix.arch.name }}_${{ matrix.distro.id }},mode=max # mode=max "export all the layers of all intermediate steps"
           build-args: |
             PACKAGE_VERSION=${{needs.prepare.outputs.created}}
             BASE_IMAGE=${{ matrix.distro.image }}
             OS_ARCH=${{ matrix.arch.name }}
             FFMPEG_BRANCH=${{ matrix.ffmpeg.branch }}
             FFMPEG_ID=${{ matrix.ffmpeg.id }}
+            DAV1D_BRANCH=${{ matrix.dav1d.branch }}
+            DAV1D_ID=${{ matrix.dav1d.id }}
           outputs: |
             type=local,dest=out
 
@@ -105,10 +106,13 @@ jobs:
             OS_ARCH=${{ matrix.arch.name }}
             FFMPEG_BRANCH=${{ matrix.ffmpeg.branch }}
             FFMPEG_ID=${{ matrix.ffmpeg.id }}
+            DAV1D_BRANCH=${{ matrix.dav1d.branch }}
+            DAV1D_ID=${{ matrix.dav1d.id }}
 
   release:
     needs: [ prepare, build ] # depend on the previous jobs...
     runs-on: ubuntu-latest
+    if: '!cancelled()' # run even if some of the previous jobs failed, but not if the workflow was cancelled
     steps:
       # Download the built artifacts from GH artifacts.
       - uses: actions/download-artifact@v8

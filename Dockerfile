@@ -3,38 +3,50 @@
 ARG BASE_IMAGE="debian:trixie"
 FROM ${BASE_IMAGE} AS packager
 
-#### Dependencies. In batches; this is built under buildx and layers not published so we don't care about layer size.
+#### Dependencies. This is built under buildx and layers not published so we don't care about layer size.
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get -y update && apt-get -y dist-upgrade && apt-get -y install git bash wget curl build-essential devscripts debhelper pkg-config cmake meson tree
-# Generic Dependencies for kodi
-RUN apt-get -y install debhelper autoconf automake autopoint gettext autotools-dev curl gawk gcc gdc gperf libtool lsb-release meson nasm ninja-build \
-               python3-dev python3-pil python3-pip swig unzip uuid-dev zip
+ENV FORCE_COLOR=1
 
-# Kodi GBM dependencies; also CEC and  MariaDB (not Mysql) dependencies.
-# Dependencies for ffmpeg and libdisplay-info
-RUN apt-get -y install libdrm-dev hwdata
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,target=/var/lib/apt,sharing=locked <<-ALL_DEB_DEPS
 
-## Deps for Kodi
-RUN apt-get -y install libasound2-dev libass-dev libavahi-client-dev \
-    libavahi-common-dev libbluetooth-dev libbluray-dev libbz2-dev libcdio-dev libcdio++-dev libp8-platform-dev libcrossguid-dev libcurl4-openssl-dev libcwiid-dev libdbus-1-dev  \
-    libegl1-mesa-dev libenca-dev libexiv2-dev libflac-dev libfmt-dev libfontconfig-dev libfreetype6-dev libfribidi-dev libfstrcmp-dev libgcrypt-dev libgif-dev \
-    libgles2-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libgnutls28-dev libgpg-error-dev libgtest-dev libiso9660-dev libjpeg-dev liblcms2-dev libltdl-dev liblzo2-dev \
-    libmicrohttpd-dev libnfs-dev libogg-dev libpcre2-dev libplist-dev libpng-dev libpulse-dev libshairplay-dev libsmbclient-dev libspdlog-dev libsqlite3-dev \
-    libssl-dev libtag1-dev libtiff5-dev libtinyxml-dev libtinyxml2-dev libudev-dev libunistring-dev libvorbis-dev  \
-    libxslt1-dev libxt-dev rapidjson-dev zlib1g-dev default-jre libgbm-dev libinput-dev libxkbcommon-dev libcec-dev libmariadb-dev liblirc-dev # Removed: libva-dev libvdpau-dev libxmu-dev libxrandr-dev libdrm-dev
+ls -laR  /etc/apt/apt.conf.d; for ja in /etc/apt/apt.conf.d/*; do echo "APT CONF.D ITEM: $ja"; cat "$ja"; done
+rm -rfv /etc/apt/apt.conf.d/docker-clean /etc/apt/apt.conf.d/docker-gzip-indexes
 
-# New dep for kodi in 2025?
-RUN apt-get -y install nlohmann-json3-dev
+apt-get -y update
+apt-get -y dist-upgrade
+apt-get -y install \
+    git bash wget curl build-essential devscripts debhelper pkg-config cmake meson tree \
+    debhelper autoconf automake autopoint gettext autotools-dev curl gawk gcc gdc gperf \
+    libtool lsb-release meson nasm ninja-build python3-dev python3-pil python3-pip unzip \
+    uuid-dev zip libdrm-dev hwdata libasound2-dev libass-dev libavahi-client-dev \
+    libavahi-common-dev libbluetooth-dev libbluray-dev libbz2-dev libcdio-dev \
+    libcdio++-dev libp8-platform-dev libcrossguid-dev libcurl4-openssl-dev libcwiid-dev \
+    libdbus-1-dev  libegl1-mesa-dev libenca-dev libexiv2-dev libflac-dev libfmt-dev \
+    libfontconfig-dev libfreetype6-dev libfribidi-dev libfstrcmp-dev libgcrypt-dev \
+    libgif-dev libgles2-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libgnutls28-dev \
+    libgpg-error-dev libgtest-dev libiso9660-dev libjpeg-dev liblcms2-dev libltdl-dev \
+    liblzo2-dev libmicrohttpd-dev libnfs-dev libogg-dev libpcre2-dev libplist-dev \
+    libpng-dev libpulse-dev libshairplay-dev libsmbclient-dev libspdlog-dev \
+    libsqlite3-dev libssl-dev libtag1-dev libtiff5-dev libtinyxml-dev libtinyxml2-dev \
+    libudev-dev libunistring-dev libvorbis-dev libxslt1-dev libxt-dev rapidjson-dev \
+    zlib1g-dev default-jre libgbm-dev libinput-dev libxkbcommon-dev libcec-dev \
+    libmariadb-dev liblirc-dev nlohmann-json3-dev bison
+
+du -h /var/cache/apt
+du -h /var/lib/apt
+
+ALL_DEB_DEPS
 
 
 #### Git clones. Heavy stuff.
 ARG FFMPEG_BRANCH="8.1"
+ARG DAV1D_BRANCH="1.5.4"
 SHELL ["/bin/bash", "-e", "-c"]
 WORKDIR /src
 RUN git -c advice.detachedHead=false clone https://gitlab.freedesktop.org/emersion/libdisplay-info.git libdisplay-info && \
     git -c advice.detachedHead=false clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git rkmpp && \
     git -c advice.detachedHead=false clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git rkrga && \
-    git -c advice.detachedHead=false clone -b 1.5.3 --depth=1 https://code.videolan.org/videolan/dav1d.git dav1d && \
+    git -c advice.detachedHead=false clone -b "${DAV1D_BRANCH}" --depth=1 https://code.videolan.org/videolan/dav1d.git dav1d && \
     git -c advice.detachedHead=false clone -b "${FFMPEG_BRANCH}" --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg
 
 #### Builds
@@ -97,7 +109,7 @@ RUN for p in /src/patches/kodi/*.patch; do echo "Applying patch ${p} ..."; patch
 
 # Kodi build. the --build step actually downloads things and that might fail, so retry it a few times.
 WORKDIR /src/kodi-build
-RUN cmake ../kodi -DCMAKE_INSTALL_PREFIX=/usr/local -DCORE_PLATFORM_NAME=gbm -DAPP_RENDER_SYSTEM=gles -DENABLE_INTERNAL_FMT=ON -DENABLE_INTERNAL_FLATBUFFERS=ON -DENABLE_INTERNAL_TAGLIB=ON && \
+RUN cmake ../kodi -DCMAKE_INSTALL_PREFIX=/usr/local -DCORE_PLATFORM_NAME=gbm -DAPP_RENDER_SYSTEM=gles -DENABLE_INTERNAL_FMT=ON -DENABLE_INTERNAL_FLATBUFFERS=ON -DENABLE_INTERNAL_TAGLIB=ON -DENABLE_INTERNAL_SWIG=ON && \
     cmake --build . -- -j$(nproc) || cmake --build . -- -j$(nproc) || cmake --build . -- -j$(nproc) && \
     make install
 
@@ -177,12 +189,19 @@ FROM ${BASE_IMAGE} AS containerized-kodi
 
 # Install the built package. Bind-mount the .deb from the packager stage so it's
 # only present during this RUN and never ends up in a published layer.
+# re-use the apt cache from the build stage to avoid downloading stuff again.
 ENV DEBIAN_FRONTEND=noninteractive
-RUN --mount=type=bind,from=packager,source=/artifacts,target=/debs \
-    apt-get -y update && \
-    apt-get -y install /debs/*.deb pulseaudio-utils ir-keytable && \
-    rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,target=/var/lib/apt,sharing=locked  --mount=type=bind,from=packager,source=/artifacts,target=/debs <<-INSTALL_DEBS
 
+ls -laR  /etc/apt/apt.conf.d; for ja in /etc/apt/apt.conf.d/*; do echo "APT CONF.D ITEM: $ja"; cat "$ja"; done
+rm -rfv /etc/apt/apt.conf.d/docker-clean /etc/apt/apt.conf.d/docker-gzip-indexes
+
+du -h /var/cache/apt
+du -h /var/lib/apt
+apt-get -y update
+apt-get -y dist-upgrade
+apt-get -y install /debs/*.deb pulseaudio-utils ir-keytable
+INSTALL_DEBS
 
 # Final stage is just the output deb
 FROM scratch
