@@ -1,10 +1,10 @@
-name: main-latest
+name: kodi-vendor-rkmpp-latest
 
 on:
   schedule:
     # Every tuesday at 01:30 UTC
     - cron: '30 1 * * 2'
-  workflow_dispatch: # https://github.com/armsurvivors/kodi-rockchip-deb/actions/workflows/main-latest.yml
+  workflow_dispatch: # https://github.com/armsurvivors/kodi-rockchip-deb/actions/workflows/kodi-vendor-rkmpp-latest.yml
   #push:
   #  branches: [ main ]
 
