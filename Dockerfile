@@ -28,7 +28,7 @@ apt-get -y install \
     liblzo2-dev libmicrohttpd-dev libnfs-dev libogg-dev libpcre2-dev libplist-dev \
     libpng-dev libpulse-dev libshairplay-dev libsmbclient-dev libspdlog-dev \
     libsqlite3-dev libssl-dev libtag1-dev libtiff5-dev libtinyxml-dev libtinyxml2-dev \
-    libudev-dev libunistring-dev libvorbis-dev libxslt1-dev libxt-dev rapidjson-dev \
+    libudev-dev libunistring-dev libvorbis-dev libxslt1-dev libxt-dev libxrandr-dev rapidjson-dev \
     zlib1g-dev default-jre libgbm-dev libinput-dev libxkbcommon-dev libcec-dev \
     libmariadb-dev liblirc-dev nlohmann-json3-dev bison
 
