@@ -1,0 +1,78 @@
+From ec93992527c0ea3d1e7340c2266f880fd9167f35 Mon Sep 17 00:00:00 2001
+From: Christian Hewitt <christianshewitt@gmail.com>
+Date: Mon, 28 Sep 2026 07:05:35 +0000
+Subject: [PATCH 22/22] avutil/hwcontext_v4l2request: Add support for Amlogic
+ AM21B pix fmts
+
+Map the Amlogic basic-layout compressed capture format to the DRM
+Amlogic FBC basic modifier, with memory saving for 8-bit. The overlay
+finds the header after the body using the pitch, so export the coded
+width as the pitch.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+---
+ libavutil/hwcontext_v4l2request.c | 33 +++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+diff --git a/libavutil/hwcontext_v4l2request.c b/libavutil/hwcontext_v4l2request.c
+index 99c5bfcfc0..067316ccaf 100644
+--- a/libavutil/hwcontext_v4l2request.c
++++ b/libavutil/hwcontext_v4l2request.c
+@@ -44,6 +44,15 @@
+ #define V4L2_PIX_FMT_MESON_AM21C v4l2_fourcc('A', 'M', '2', '1')
+ #endif
+ 
++/*
++ * Amlogic vdec basic-layout capture format: a single plane carrying the
++ * compressed body followed by its header, for SoCs where the decoder frame
++ * MMU is unavailable.
++ */
++#ifndef V4L2_PIX_FMT_MESON_AM21B
++#define V4L2_PIX_FMT_MESON_AM21B v4l2_fourcc('A', 'M', '2', 'B')
++#endif
++
+ typedef struct V4L2RequestVideoDecoder {
+     dev_t media_dev;
+     dev_t video_dev;
+@@ -139,6 +148,21 @@ static const struct {
+         .format_modifier = DRM_FORMAT_MOD_AMLOGIC_FBC(AMLOGIC_FBC_LAYOUT_SCATTER, 0),
+         .bit_depth = 10,
+     },
++    {
++        .pixelformat = V4L2_PIX_FMT_MESON_AM21B,
++        .sw_format = AV_PIX_FMT_YUV420P,
++        .drm_format = DRM_FORMAT_YUV420_8BIT,
++        .format_modifier = DRM_FORMAT_MOD_AMLOGIC_FBC(AMLOGIC_FBC_LAYOUT_BASIC,
++                                                      AMLOGIC_FBC_OPTION_MEM_SAVING),
++        .bit_depth = 8,
++    },
++    {
++        .pixelformat = V4L2_PIX_FMT_MESON_AM21B,
++        .sw_format = AV_PIX_FMT_YUV420P10,
++        .drm_format = DRM_FORMAT_YUV420_10BIT,
++        .format_modifier = DRM_FORMAT_MOD_AMLOGIC_FBC(AMLOGIC_FBC_LAYOUT_BASIC, 0),
++        .bit_depth = 10,
++    },
+ #if defined(V4L2_PIX_FMT_NV12_COL128) && defined(V4L2_PIX_FMT_NV12_10_COL128)
+     { V4L2_PIX_FMT_NV12_COL128, AV_PIX_FMT_YUV420P, DRM_FORMAT_NV12, DRM_FORMAT_MOD_BROADCOM_SAND128, 8 },
+ #if defined(DRM_FORMAT_P030)
+@@ -225,6 +249,15 @@ static int v4l2request_set_drm_descriptor(AVDRMFrameDescriptor *desc,
+     if (pixelformat == V4L2_PIX_FMT_MESON_AM21C)
+         layer->planes[0].pitch = 0;
+ 
++    /*
++     * In the basic layout the header follows the body, and the meson overlay
++     * locates it from the pitch, so the pitch must be the coded width.
++     */
++    if (pixelformat == V4L2_PIX_FMT_MESON_AM21B)
++        layer->planes[0].pitch = V4L2_TYPE_IS_MULTIPLANAR(format->type) ?
++                                 format->fmt.pix_mp.width :
++                                 format->fmt.pix.width;
++
+ #if defined(V4L2_PIX_FMT_NV12M)
+     // NV12M holds each plane in a separate buffer, not at an offset into one
+     if (pixelformat == V4L2_PIX_FMT_NV12M) {
+-- 
+2.55.0
+

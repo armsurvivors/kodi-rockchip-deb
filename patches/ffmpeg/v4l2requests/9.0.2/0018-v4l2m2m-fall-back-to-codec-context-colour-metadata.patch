@@ -1,0 +1,69 @@
+From 29a7002813577c41b18fa3ba8e6ce1034c295c6d Mon Sep 17 00:00:00 2001
+From: Gus Bourg <gus@bourg.net>
+Date: Wed, 2 Sep 2026 17:30:00 -0700
+Subject: [PATCH 18/22] v4l2m2m: fall back to codec-context colour metadata
+
+Signed-off-by: Gus Bourg <gus@bourg.net>
+---
+ libavcodec/v4l2_buffers.c | 45 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
+diff --git a/libavcodec/v4l2_buffers.c b/libavcodec/v4l2_buffers.c
+index f96c26771b..7e3c7a4efc 100644
+--- a/libavcodec/v4l2_buffers.c
++++ b/libavcodec/v4l2_buffers.c
+@@ -456,6 +456,51 @@ int ff_v4l2_buffer_buf_to_avframe(AVFrame *frame, V4L2Buffer *avbuf)
+     frame->colorspace = v4l2_get_color_space(avbuf);
+     frame->color_range = v4l2_get_color_range(avbuf);
+     frame->color_trc = v4l2_get_color_trc(avbuf);
++
++    /*
++     * meson-vdec (and other stateful decoders) report the CAPTURE queue
++     * colorspace as DEFAULT because nothing programs it on the OUTPUT
++     * side for decode, so the getters above come back UNSPECIFIED.  Fall
++     * back to the codec context's colour properties (parsed from the
++     * container/bitstream by lavf/lavc) and propagate the static HDR
++     * side data, so downstream consumers such as Kodi's HDR passthrough
++     * see PQ/BT.2020 plus mastering metadata on HDR streams.
++     */
++    {
++        const AVCodecContext * const avctx = buf_to_m2mctx(avbuf)->avctx;
++
++        if (avctx) {
++            int i;
++
++            if (frame->color_primaries == AVCOL_PRI_UNSPECIFIED)
++                frame->color_primaries = avctx->color_primaries;
++            if (frame->colorspace == AVCOL_SPC_UNSPECIFIED)
++                frame->colorspace = avctx->colorspace;
++            if (frame->color_range == AVCOL_RANGE_UNSPECIFIED)
++                frame->color_range = avctx->color_range;
++            if (frame->color_trc == AVCOL_TRC_UNSPECIFIED)
++                frame->color_trc = avctx->color_trc;
++
++            for (i = 0; i < avctx->nb_coded_side_data; i++) {
++                const AVPacketSideData * const sd = &avctx->coded_side_data[i];
++                enum AVFrameSideDataType fsd;
++
++                if (sd->type == AV_PKT_DATA_MASTERING_DISPLAY_METADATA)
++                    fsd = AV_FRAME_DATA_MASTERING_DISPLAY_METADATA;
++                else if (sd->type == AV_PKT_DATA_CONTENT_LIGHT_LEVEL)
++                    fsd = AV_FRAME_DATA_CONTENT_LIGHT_LEVEL;
++                else
++                    continue;
++
++                if (!av_frame_get_side_data(frame, fsd)) {
++                    AVFrameSideData * const nsd =
++                        av_frame_new_side_data(frame, fsd, sd->size);
++                    if (nsd)
++                        memcpy(nsd->data, sd->data, sd->size);
++                }
++            }
++        }
++    }
+     frame->pts = v4l2_get_pts(avbuf);
+     frame->pkt_dts = AV_NOPTS_VALUE;
+     v4l2_get_interlacing(frame, avbuf);
+-- 
+2.55.0
+

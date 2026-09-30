@@ -1,0 +1,169 @@
+From 064b026b90d49fd1ca3648ea219f11699b2fcc4a Mon Sep 17 00:00:00 2001
+From: Christian Hewitt <christianshewitt@gmail.com>
+Date: Tue, 22 Sep 2026 06:03:04 +0000
+Subject: [PATCH 19/22] avutil/hwcontext_v4l2request: Add support for Amlogic
+ NV12M pix fmts
+
+Add support for NV12M used by the downstream Amlogic decoder.
+
+Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+---
+ libavcodec/v4l2_request.c         | 32 +++++++++++++++++++++++++------
+ libavcodec/v4l2_request.h         |  1 +
+ libavutil/hwcontext_v4l2request.c | 18 +++++++++++++++++
+ 3 files changed, 45 insertions(+), 6 deletions(-)
+
+diff --git a/libavcodec/v4l2_request.c b/libavcodec/v4l2_request.c
+index 36eec85402..81ad4d48f1 100644
+--- a/libavcodec/v4l2_request.c
++++ b/libavcodec/v4l2_request.c
+@@ -146,8 +146,10 @@ static int v4l2_request_queue_buffer(V4L2RequestContext *ctx,
+     // Mark the buffer as queued
+     if (V4L2_TYPE_IS_OUTPUT(buffer->type))
+         ctx->queued_output |= 1 << buffer->index;
+-    else
++    else {
+         ctx->queued_capture |= 1 << buffer->index;
++        ctx->capture_error &= ~(UINT64_C(1) << buffer->index);
++    }
+ 
+     return 0;
+ }
+@@ -200,8 +202,11 @@ static int v4l2_request_dequeue_buffer(V4L2RequestContext *ctx,
+     // Mark the buffer as dequeued
+     if (V4L2_TYPE_IS_OUTPUT(buffer.type))
+         ctx->queued_output &= ~(1 << buffer.index);
+-    else
++    else {
+         ctx->queued_capture &= ~(1 << buffer.index);
++        if (buffer.flags & V4L2_BUF_FLAG_ERROR)
++            ctx->capture_error |= UINT64_C(1) << buffer.index;
++    }
+ 
+     return 0;
+ }
+@@ -218,7 +223,8 @@ static inline int v4l2_request_dequeue_completed_buffers(V4L2RequestContext *ctx
+     return ret;
+ }
+ 
+-static int v4l2_request_wait_on_capture(V4L2RequestContext *ctx, uint32_t index)
++static int v4l2_request_wait_on_capture(V4L2RequestContext *ctx, uint32_t index,
++                                        bool *decode_error)
+ {
+     enum v4l2_buf_type type = ctx->fctxi->capture.format.type;
+     struct pollfd pollfd = {
+@@ -228,6 +234,9 @@ static int v4l2_request_wait_on_capture(V4L2RequestContext *ctx, uint32_t index)
+ 
+     ff_mutex_lock(&ctx->mutex);
+ 
++    if (decode_error)
++        *decode_error = false;
++
+     // Dequeue all completed CAPTURE buffers
+     if (ctx->queued_capture)
+         v4l2_request_dequeue_completed_buffers(ctx, type);
+@@ -243,6 +252,8 @@ static int v4l2_request_wait_on_capture(V4L2RequestContext *ctx, uint32_t index)
+             goto fail;
+     }
+ 
++    if (decode_error)
++        *decode_error = !!(ctx->capture_error & (UINT64_C(1) << index));
+     ff_mutex_unlock(&ctx->mutex);
+     return 0;
+ 
+@@ -371,7 +382,7 @@ static int v4l2_request_queue_decode(AVCodecContext *avctx,
+          * FFmpeg may reuse an AVFrame early, i.e. when no output frame was
+          * produced prior time, and a synchronization is necessary.
+          */
+-        ret = v4l2_request_wait_on_capture(ctx, pic->capture_index);
++        ret = v4l2_request_wait_on_capture(ctx, pic->capture_index, NULL);
+         if (ret < 0)
+             return ret;
+     }
+@@ -495,9 +506,18 @@ static int v4l2_request_post_process(void *logctx, AVFrame *frame)
+     uint32_t index = v4l2_request_frameindex(frame);
+     FrameDecodeData *fdd = frame->private_ref;
+     V4L2RequestContext *ctx = fdd->hwaccel_priv;
++    bool decode_error;
++    int ret;
+ 
+     // Wait on CAPTURE buffer before returning the frame to application
+-    return v4l2_request_wait_on_capture(ctx, index);
++    ret = v4l2_request_wait_on_capture(ctx, index, &decode_error);
++    if (ret < 0)
++        return ret;
++    if (decode_error) {
++        av_log(logctx, AV_LOG_ERROR, "driver decode error\n");
++        frame->decode_error_flags |= FF_DECODE_ERROR_INVALID_BITSTREAM;
++    }
++    return 0;
+ }
+ 
+ int ff_v4l2_request_reset_picture(AVCodecContext *avctx, V4L2RequestPictureContext *pic)
+@@ -527,7 +547,7 @@ int ff_v4l2_request_start_frame(AVCodecContext *avctx,
+         return ret;
+ 
+     // Ensure CAPTURE buffer is dequeued before reuse
+-    ret = v4l2_request_wait_on_capture(ctx, index);
++    ret = v4l2_request_wait_on_capture(ctx, index, NULL);
+     if (ret)
+         return ret;
+ 
+diff --git a/libavcodec/v4l2_request.h b/libavcodec/v4l2_request.h
+index 53759f20bb..135a458813 100644
+--- a/libavcodec/v4l2_request.h
++++ b/libavcodec/v4l2_request.h
+@@ -50,6 +50,7 @@ typedef struct V4L2RequestContext {
+     uint32_t queued_output;
+     uint32_t queued_request;
+     uint64_t queued_capture;
++    uint64_t capture_error;
+     struct v4l2_ext_control *init_controls;
+     int nb_init_controls;
+ } V4L2RequestContext;
+diff --git a/libavutil/hwcontext_v4l2request.c b/libavutil/hwcontext_v4l2request.c
+index b6633d9081..0878c3fc38 100644
+--- a/libavutil/hwcontext_v4l2request.c
++++ b/libavutil/hwcontext_v4l2request.c
+@@ -66,6 +66,9 @@ static const struct {
+     uint32_t bit_depth;
+ } v4l2request_capture_pixelformats[] = {
+     { V4L2_PIX_FMT_NV12, AV_PIX_FMT_NV12, DRM_FORMAT_NV12, DRM_FORMAT_MOD_LINEAR, 8 },
++#if defined(V4L2_PIX_FMT_NV12M)
++    { V4L2_PIX_FMT_NV12M, AV_PIX_FMT_NV12, DRM_FORMAT_NV12, DRM_FORMAT_MOD_LINEAR, 8 },
++#endif
+ #if defined(V4L2_PIX_FMT_NV12_32L32)
+     { V4L2_PIX_FMT_NV12_32L32, AV_PIX_FMT_YUV420P, DRM_FORMAT_NV12, DRM_FORMAT_MOD_ALLWINNER_TILED, 8 },
+ #endif
+@@ -162,6 +165,15 @@ static int v4l2request_set_drm_descriptor(AVDRMFrameDescriptor *desc,
+         layer->planes[1].pitch = layer->planes[0].pitch;
+     }
+ 
++#if defined(V4L2_PIX_FMT_NV12M)
++    // NV12M holds each plane in a separate buffer, not at an offset into one
++    if (pixelformat == V4L2_PIX_FMT_NV12M) {
++        layer->planes[1].object_index = 1;
++        layer->planes[1].offset = 0;
++        layer->planes[1].pitch = format->fmt.pix_mp.plane_fmt[1].bytesperline;
++    }
++#endif
++
+ #if defined(V4L2_PIX_FMT_NV12MT_COL128) && defined(V4L2_PIX_FMT_NV12MT_10_COL128)
+     // Raspberry Pi formats need special handling
+     if (pixelformat == V4L2_PIX_FMT_NV12MT_COL128 ||
+@@ -237,6 +249,12 @@ static int v4l2request_set_format(AVHWFramesContext *hwfc,
+         format.fmt.pix_mp.pixelformat = pixelformat;
+         format.fmt.pix_mp.plane_fmt[0].sizeimage = buffersize;
+         format.fmt.pix_mp.num_planes = 1;
++#if defined(V4L2_PIX_FMT_NV12M)
++        if (pixelformat == V4L2_PIX_FMT_NV12M) {
++            format.fmt.pix_mp.num_planes = 2;
++            format.fmt.pix_mp.plane_fmt[1].sizeimage = 0;
++        }
++#endif
+     } else {
+         format.fmt.pix.width = hwfc->width;
+         format.fmt.pix.height = hwfc->height;
+-- 
+2.55.0
+

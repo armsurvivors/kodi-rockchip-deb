@@ -1,0 +1,203 @@
+From bfebab45a89249009f60a34fe625d1f1784ff823 Mon Sep 17 00:00:00 2001
+From: Gus Bourg <gus@bourg.net>
+Date: Tue, 22 Sep 2026 06:49:48 +0000
+Subject: [PATCH 20/22] avutil/hwcontext_v4l2request: Add support for Amlogic
+ AM21C pix fmts
+
+Add support for AM21C used as the native framebuffer compression format
+for the Amlogic decoder. This holds the AFBC 'scatter' MMU layout that
+can be scanned out directly as DRM_FORMAT_YUV420_8BIT/10BIT along with
+DRM_FORMAT_MOD_AMLOGIC_FBC(SCATTER) allowing a decoded frame to reach the
+display with no downsample to NV12M or 8-bit truncation.
+
+Unlike every other entry in the capture format table, Amlogic FBC uses a
+single fourcc for both bit depths, the DRM format and modifier options
+are what differ. Add one table entry per depth and make the pixel format
+lookups prefer the entry matching the requested bit depth, falling back
+to the first match. Formats with a dedicated fourcc per depth have one
+entry each so always hit the fallback and their behaviour is unchanged.
+
+The header plane is the only plane, so extend the AFBC single-plane check
+to cover the Amlogic vendor modifier and export it with pitch 0: the DRM
+core sizes a cpp==0 fb as (height-1)*pitch and rejects a nonzero pitch
+against the header-sized GEM object. The meson overlay derives geometry
+from the fb width and height.
+
+Signed-off-by: Gus Bourg <gus@bourg.net>
+Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+---
+ libavutil/hwcontext_v4l2request.c | 98 ++++++++++++++++++++++++-------
+ 1 file changed, 78 insertions(+), 20 deletions(-)
+
+diff --git a/libavutil/hwcontext_v4l2request.c b/libavutil/hwcontext_v4l2request.c
+index 0878c3fc38..99c5bfcfc0 100644
+--- a/libavutil/hwcontext_v4l2request.c
++++ b/libavutil/hwcontext_v4l2request.c
+@@ -34,6 +34,16 @@
+ #include "hwcontext_v4l2request_internal.h"
+ #include "mem.h"
+ 
++/*
++ * Amlogic vdec zero-copy capture format: a single plane carrying the
++ * decoder's native AFBC/MMU compression header ("scatter" layout), scanned
++ * out directly by the G12 VD1 video overlay. Private to the meson vdec
++ * driver and missing from mainline headers - the value is ABI.
++ */
++#ifndef V4L2_PIX_FMT_MESON_AM21C
++#define V4L2_PIX_FMT_MESON_AM21C v4l2_fourcc('A', 'M', '2', '1')
++#endif
++
+ typedef struct V4L2RequestVideoDecoder {
+     dev_t media_dev;
+     dev_t video_dev;
+@@ -110,6 +120,25 @@ static const struct {
+         .bit_depth = 10,
+     },
+ #endif
++    /*
++     * Amlogic FBC uses one fourcc for both depths, so it needs an entry per
++     * bit depth - the DRM format and the modifier options differ.
++     */
++    {
++        .pixelformat = V4L2_PIX_FMT_MESON_AM21C,
++        .sw_format = AV_PIX_FMT_YUV420P,
++        .drm_format = DRM_FORMAT_YUV420_8BIT,
++        .format_modifier = DRM_FORMAT_MOD_AMLOGIC_FBC(AMLOGIC_FBC_LAYOUT_SCATTER,
++                                                      AMLOGIC_FBC_OPTION_MEM_SAVING),
++        .bit_depth = 8,
++    },
++    {
++        .pixelformat = V4L2_PIX_FMT_MESON_AM21C,
++        .sw_format = AV_PIX_FMT_YUV420P10,
++        .drm_format = DRM_FORMAT_YUV420_10BIT,
++        .format_modifier = DRM_FORMAT_MOD_AMLOGIC_FBC(AMLOGIC_FBC_LAYOUT_SCATTER, 0),
++        .bit_depth = 10,
++    },
+ #if defined(V4L2_PIX_FMT_NV12_COL128) && defined(V4L2_PIX_FMT_NV12_10_COL128)
+     { V4L2_PIX_FMT_NV12_COL128, AV_PIX_FMT_YUV420P, DRM_FORMAT_NV12, DRM_FORMAT_MOD_BROADCOM_SAND128, 8 },
+ #if defined(DRM_FORMAT_P030)
+@@ -118,26 +147,46 @@ static const struct {
+ #endif
+ };
+ 
++/*
++ * Find the capture format entry for a V4L2 pixel format, preferring the one
++ * matching bit_depth. Formats with a dedicated fourcc per depth have a single
++ * entry, and fall back to it whatever the requested depth is.
++ */
++static int v4l2request_find_capture_pixelformat(uint32_t pixelformat,
++                                                uint32_t bit_depth)
++{
++    int fallback = -1;
++
++    for (int i = 0; i < FF_ARRAY_ELEMS(v4l2request_capture_pixelformats); i++) {
++        if (pixelformat != v4l2request_capture_pixelformats[i].pixelformat)
++            continue;
++        if (bit_depth == v4l2request_capture_pixelformats[i].bit_depth)
++            return i;
++        if (fallback < 0)
++            fallback = i;
++    }
++
++    return fallback;
++}
++
+ static int v4l2request_set_drm_descriptor(AVDRMFrameDescriptor *desc,
+-                                          struct v4l2_format *format)
++                                          struct v4l2_format *format,
++                                          uint32_t bit_depth)
+ {
+     AVDRMLayerDescriptor *layer = &desc->layers[0];
+     uint32_t pixelformat = V4L2_TYPE_IS_MULTIPLANAR(format->type) ?
+                            format->fmt.pix_mp.pixelformat :
+                            format->fmt.pix.pixelformat;
+     uint64_t format_modifier;
++    int index;
+ 
+-    layer->format = 0;
+-    for (int i = 0; i < FF_ARRAY_ELEMS(v4l2request_capture_pixelformats); i++) {
+-        if (pixelformat == v4l2request_capture_pixelformats[i].pixelformat) {
+-            layer->format = v4l2request_capture_pixelformats[i].drm_format;
+-            format_modifier = v4l2request_capture_pixelformats[i].format_modifier;
+-            break;
+-        }
+-    }
+-    if (!layer->format)
++    index = v4l2request_find_capture_pixelformat(pixelformat, bit_depth);
++    if (index < 0)
+         return AVERROR(ENOENT);
+ 
++    layer->format = v4l2request_capture_pixelformats[index].drm_format;
++    format_modifier = v4l2request_capture_pixelformats[index].format_modifier;
++
+     for (int i = 0; i < desc->nb_objects; i++) {
+         desc->objects[i].format_modifier = format_modifier;
+         desc->objects[i].size = V4L2_TYPE_IS_MULTIPLANAR(format->type) ?
+@@ -154,8 +203,9 @@ static int v4l2request_set_drm_descriptor(AVDRMFrameDescriptor *desc,
+                              format->fmt.pix_mp.plane_fmt[0].bytesperline :
+                              format->fmt.pix.bytesperline;
+ 
+-    // AFBC formats only use 1 plane, remaining use 2 planes
+-    if ((desc->objects[0].format_modifier >> 56) != DRM_FORMAT_MOD_VENDOR_ARM) {
++    // AFBC and Amlogic FBC formats only use 1 plane, remaining use 2 planes
++    if ((desc->objects[0].format_modifier >> 56) != DRM_FORMAT_MOD_VENDOR_ARM &&
++        (desc->objects[0].format_modifier >> 56) != DRM_FORMAT_MOD_VENDOR_AMLOGIC) {
+         layer->nb_planes = 2;
+         layer->planes[1].object_index = 0;
+         layer->planes[1].offset = layer->planes[0].pitch *
+@@ -165,6 +215,16 @@ static int v4l2request_set_drm_descriptor(AVDRMFrameDescriptor *desc,
+         layer->planes[1].pitch = layer->planes[0].pitch;
+     }
+ 
++    /*
++     * The Amlogic FBC header plane carries the body page layout itself, so it
++     * has no meaningful pitch - and it must be 0: the DRM core sizes a cpp==0
++     * fb as (height-1)*pitch and rejects a nonzero pitch against the
++     * header-sized GEM object. The meson overlay derives all geometry from
++     * the fb width and height.
++     */
++    if (pixelformat == V4L2_PIX_FMT_MESON_AM21C)
++        layer->planes[0].pitch = 0;
++
+ #if defined(V4L2_PIX_FMT_NV12M)
+     // NV12M holds each plane in a separate buffer, not at an offset into one
+     if (pixelformat == V4L2_PIX_FMT_NV12M) {
+@@ -882,7 +942,7 @@ static AVBufferRef *v4l2request_frame_alloc(void *opaque, size_t size)
+     }
+ 
+     // Set AVDRMFrameDescriptor based on CAPTURE buffer format
+-    if (v4l2request_set_drm_descriptor(&desc->base, format) < 0)
++    if (v4l2request_set_drm_descriptor(&desc->base, format, fctx->bit_depth) < 0)
+         goto fail;
+ 
+     return ref;
+@@ -897,7 +957,7 @@ static int v4l2request_frames_init(AVHWFramesContext *hwfc)
+     V4L2RequestFramesContext *hwctx = hwfc->hwctx;
+     AVV4L2RequestFramesContextInternal *fctxi;
+     uint32_t pixelformat;
+-    int ret;
++    int index, ret;
+ 
+     // Set initial default values
+     fctxi = &hwctx->internal;
+@@ -925,13 +985,11 @@ static int v4l2request_frames_init(AVHWFramesContext *hwfc)
+         pixelformat = fctxi->capture.format.fmt.pix.pixelformat;
+     }
+ 
++    index = v4l2request_find_capture_pixelformat(pixelformat, hwctx->p.bit_depth);
+     hwfc->sw_format = AV_PIX_FMT_NONE;
+-    for (int i = 0; i < FF_ARRAY_ELEMS(v4l2request_capture_pixelformats); i++) {
+-        if (pixelformat == v4l2request_capture_pixelformats[i].pixelformat) {
+-            hwctx->p.bit_depth = v4l2request_capture_pixelformats[i].bit_depth;
+-            hwfc->sw_format = v4l2request_capture_pixelformats[i].sw_format;
+-            break;
+-        }
++    if (index >= 0) {
++        hwctx->p.bit_depth = v4l2request_capture_pixelformats[index].bit_depth;
++        hwfc->sw_format = v4l2request_capture_pixelformats[index].sw_format;
+     }
+ 
+     // Initialize buffer pool for CAPTURE buffers
+-- 
+2.55.0
+

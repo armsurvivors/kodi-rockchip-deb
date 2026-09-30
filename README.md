@@ -73,7 +73,7 @@ Understand:
 - Run the container with:
   - `nerdctl run -it --privileged --network host --volume /dev:/dev --volume /run:/run ghcr.io/armsurvivors/kodi-rockchip-deb:trixie-latest kodi --logging=console`
     - similar for Docker
-- You can add more `--volume` mounts for `/root.kodi` so your config persists
+- You can add more `--volume` mounts for `/root/.kodi` so your config persists
 
 ### Troubleshooting
 

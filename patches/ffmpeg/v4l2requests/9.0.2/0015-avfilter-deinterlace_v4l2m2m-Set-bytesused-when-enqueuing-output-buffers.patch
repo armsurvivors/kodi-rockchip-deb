@@ -1,0 +1,42 @@
+From 83811ad27c7f961d06e925d868c7d12236895d90 Mon Sep 17 00:00:00 2001
+From: Christian Hewitt <christianshewitt@gmail.com>
+Date: Fri, 20 Feb 2026 01:29:00 +0000
+Subject: [PATCH 15/22] avfilter/deinterlace_v4l2m2m: Set bytesused when
+ enqueuing output buffers
+
+Set bytesused to the buffer length when enqueuing output buffers to
+avoid the kernel deprecation warning "use of bytesused == 0 is
+deprecated and will be removed in the future".
+
+Assited-by: Claude Opus 4.6 <noreply@anthropic.com>
+Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+---
+ libavfilter/vf_deinterlace_v4l2m2m.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/libavfilter/vf_deinterlace_v4l2m2m.c b/libavfilter/vf_deinterlace_v4l2m2m.c
+index a498397525..ef015bb764 100644
+--- a/libavfilter/vf_deinterlace_v4l2m2m.c
++++ b/libavfilter/vf_deinterlace_v4l2m2m.c
+@@ -621,11 +621,15 @@ static int deint_v4l2m2m_enqueue(V4L2Queue *queue, const AVFrame* frame)
+     if (!buf)
+         return AVERROR(ENOMEM);
+ 
+-    if (V4L2_TYPE_IS_MULTIPLANAR(buf->buffer.type))
+-        for (i = 0; i < drm_desc->nb_objects; i++)
++    if (V4L2_TYPE_IS_MULTIPLANAR(buf->buffer.type)) {
++        for (i = 0; i < drm_desc->nb_objects; i++) {
+             buf->buffer.m.planes[i].m.fd = drm_desc->objects[i].fd;
+-    else
++            buf->buffer.m.planes[i].bytesused = buf->plane_info[i].length;
++        }
++    } else {
+         buf->buffer.m.fd = drm_desc->objects[0].fd;
++        buf->buffer.bytesused = buf->plane_info[0].length;
++    }
+ 
+     return deint_v4l2m2m_enqueue_buffer(buf);
+ }
+-- 
+2.55.0
+

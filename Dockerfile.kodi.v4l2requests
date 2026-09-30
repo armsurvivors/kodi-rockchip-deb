@@ -37,34 +37,29 @@ du -h /var/lib/apt
 
 ALL_DEB_DEPS
 
+# Lets ensure the libc/linux headers are recent enough for the stateless decoders we need.
+RUN <<-HEADERS_CHECK
+{ echo '#include <linux/videodev2.h>'; echo 'int i = V4L2_CID_STATELESS_H264_DECODE_MODE;'; } | gcc -x c -c - -o /dev/null && echo "H264 stateless: OK"
+{ echo '#include <linux/videodev2.h>'; echo 'int i = V4L2_CID_STATELESS_HEVC_SPS;'; } | gcc -x c -c - -o /dev/null && echo "HEVC stateless: OK"
+{ echo '#include <linux/videodev2.h>'; echo 'int i = V4L2_CID_STATELESS_VP9_FRAME;'; } | gcc -x c -c - -o /dev/null && echo "VP9 stateless: OK"
+{ echo '#include <linux/videodev2.h>'; echo 'int i = V4L2_CID_STATELESS_AV1_SEQUENCE;'; } | gcc -x c -c - -o /dev/null && echo "AV1 stateless: OK"
+HEADERS_CHECK
 
 #### Git clones. Heavy stuff.
-ARG FFMPEG_BRANCH="8.1"
+ARG FFMPEG_BRANCH="n9.0.2"
 ARG DAV1D_BRANCH="1.5.4"
+ARG KODI_BRANCH="master"
 SHELL ["/bin/bash", "-e", "-c"]
 WORKDIR /src
 RUN git -c advice.detachedHead=false clone https://gitlab.freedesktop.org/emersion/libdisplay-info.git libdisplay-info && \
-    git -c advice.detachedHead=false clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git rkmpp && \
-    git -c advice.detachedHead=false clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git rkrga && \
-    git -c advice.detachedHead=false clone -b "${DAV1D_BRANCH}" --depth=1 https://code.videolan.org/videolan/dav1d.git dav1d && \
-    git -c advice.detachedHead=false clone -b "${FFMPEG_BRANCH}" --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git ffmpeg
+    git -c advice.detachedHead=false clone -b "${DAV1D_BRANCH}" --depth=1 --single-branch https://code.videolan.org/videolan/dav1d.git dav1d && \
+    git -c advice.detachedHead=false clone -b "${FFMPEG_BRANCH}" --depth=1 --single-branch https://github.com/FFmpeg/FFmpeg.git ffmpeg && \
+    git -c advice.detachedHead=false clone -b "${KODI_BRANCH}" --depth=1 --single-branch https://github.com/xbmc/xbmc.git kodi
 
 #### Builds
 
 # We'll build into /usr/local, so zero that out to get a clean slate. Yeah, not too smart, but it works.
 RUN rm -rfv /usr/local/*
-
-# RKMPP
-WORKDIR /src/rkmpp/rkmpp_build
-RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_TEST=OFF .. && \
-    make -j$(nproc) && \
-    make install
-
-# RKRGA
-WORKDIR /src
-RUN meson setup rkrga rkrga_build --prefix=/usr/local --libdir=lib --buildtype=release --default-library=shared -Dcpp_args=-fpermissive -Dlibdrm=false -Dlibrga_demo=false && \
-    meson configure rkrga_build && \
-    ninja -C rkrga_build install
 
 # dav1d: fast software AV1 decoder, built from source. Enables AV1 software fallback in ffmpeg.
 # h264/hevc/vp9 software decoders are already native to ffmpeg; AV1's native decoder is too slow, so we bring dav1d.
@@ -72,14 +67,18 @@ WORKDIR /src/dav1d
 RUN meson setup build --prefix=/usr/local --libdir=lib --buildtype=release --default-library=shared -Denable_tools=false -Denable_tests=false && \
     ninja -C build install
 
-# ffmpeg, with rkxxx stuff. Nyanmisaka's fork, full of boogie goodness. You folks rock.
-# Software decode: native h264/hevc/vp9 (default) + libdav1d for AV1. Hardware decode: rkmpp. SIMD asm (NEON) is on by default on aarch64.
+# ffmpeg, from source. patches from the amazing Karlman, Casanova, Brezillon, Hewitt....
+ADD patches/ffmpeg /src/patches-ffmpeg
 WORKDIR /src/ffmpeg
-RUN ./configure --prefix=/usr/local --enable-gpl --enable-version3 --enable-libdrm --enable-rkmpp --enable-rkrga --enable-libdav1d && \
+RUN for p in /src/patches-ffmpeg/v4l2requests/9.0.2/*.patch; do echo "Applying patch ${p} ..."; patch -p1 < "$p"; done
+
+# Build ffmpeg
+WORKDIR /src/ffmpeg
+RUN ./configure --prefix=/usr/local --enable-gpl --enable-version3 --enable-libdrm  --enable-libdav1d --enable-v4l2_m2m --enable-libdrm && \
     make -j $(nproc) && \
     make install && \
     LD_LIBRARY_PATH=/usr/local/lib /usr/local/bin/ffmpeg -hide_banner -decoders | tee /tmp/decoders.txt && \
-    for d in h264 hevc vp9 av1 libdav1d h264_rkmpp hevc_rkmpp vp9_rkmpp av1_rkmpp; do \
+    for d in h264 hevc vp9 av1 libdav1d h264_v4l2m2m hevc_v4l2m2m vp9_v4l2m2m; do \
       grep -qw "$d" /tmp/decoders.txt || { echo "MISSING DECODER: $d"; exit 1; }; \
     done && \
     echo "All expected decoders present." && \
@@ -89,23 +88,15 @@ RUN ./configure --prefix=/usr/local --enable-gpl --enable-version3 --enable-libd
 WORKDIR /src/libdisplay-info
 RUN mkdir build && cd build && meson setup --prefix=/usr/local --buildtype=release .. && ninja && ninja install
 
-# Clone Kodi; ARG invalidates the cache!
-ARG KODI_BRANCH="master"
-WORKDIR /src
-RUN git -c advice.detachedHead=false clone -b "${KODI_BRANCH}" --single-branch https://github.com/xbmc/xbmc.git kodi
+# Show Kodi revision we're about to build...
 WORKDIR /src/kodi
 RUN git rev-parse HEAD
 
-# Add some quality of life patches, taken from LibreELEC.
-ADD patches /src/patches
+# Add some patches, taken from LibreELEC.
+ADD patches/kodi /src/patches-kodi
 WORKDIR /src/kodi
-RUN for p in /src/patches/kodi/*.patch; do echo "Applying patch ${p} ..."; patch -p1 < "$p"; done
-
-# In the beggining there was boogie PR https://github.com/xbmc/xbmc/pull/24431 -- we cherry-picked from that and life was good.
-# Then that PR got merged -- we got from master, and life was good.
-# Then, the whoile thing got reverted in https://github.com/xbmc/xbmc/pull/25864 - revision 9a6358ee823a92a2126354e0e579965c773cdff7
-# So now we revert the revert so Rockchip does the boogie again
-# May'2026: boogie/reardonia/chewitt at it again: https://github.com/xbmc/xbmc/pull/27402 et al - thus plain "master"
+RUN for p in /src/patches-kodi/common/*.patch; do echo "Applying patch ${p} ..."; patch -p1 < "$p"; done
+RUN for p in /src/patches-kodi/drmprime-filter/*.patch; do echo "Applying patch ${p} ..."; patch -p1 < "$p"; done
 
 # Kodi build. the --build step actually downloads things and that might fail, so retry it a few times.
 WORKDIR /src/kodi-build
@@ -160,7 +151,7 @@ RUN echo "Architecture: ${OS_ARCH}" >> /pkg/src/debian/control
 
 # Create the Changelog, fake. ARG here invalidates the cache.
 ARG PACKAGE_VERSION="20260513"
-ARG FFMPEG_ID="81"
+ARG FFMPEG_ID="902v4l2requests"
 RUN echo "kodi-rockchip-gbm (${PACKAGE_VERSION}-kodi-${KODI_BRANCH}-ffmpeg-${FFMPEG_ID}) stable; urgency=medium" >> /pkg/src/debian/changelog && \
     echo "" >> /pkg/src/debian/changelog && \
     echo "  * Not a real changelog. Sorry." >> /pkg/src/debian/changelog && \

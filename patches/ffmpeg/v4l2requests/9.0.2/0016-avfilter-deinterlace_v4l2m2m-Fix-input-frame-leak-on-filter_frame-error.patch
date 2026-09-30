@@ -1,0 +1,37 @@
+From 2b9c805a731efdad8773011b1fe4eeb11c86e87b Mon Sep 17 00:00:00 2001
+From: Christian Hewitt <christianshewitt@gmail.com>
+Date: Fri, 13 Mar 2026 17:40:38 +0000
+Subject: [PATCH 16/22] avfilter/deinterlace_v4l2m2m: Fix input frame leak on
+ filter_frame error
+
+When deint_v4l2m2m_filter_frame() fails (e.g. due to a dequeue timeout),
+the input frame is stored in ctx->cur_in_frame. On the next call,
+cur_in_frame is overwritten with the new input frame without freeing the
+old one, leaking the failed frame's memory.
+
+Fix by freeing any orphaned cur_in_frame at the start of filter_frame
+before storing the new input frame.
+
+Assiste-by: Claude Opus 4.6 <noreply@anthropic.com>
+Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+---
+ libavfilter/vf_deinterlace_v4l2m2m.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/libavfilter/vf_deinterlace_v4l2m2m.c b/libavfilter/vf_deinterlace_v4l2m2m.c
+index ef015bb764..56263379ce 100644
+--- a/libavfilter/vf_deinterlace_v4l2m2m.c
++++ b/libavfilter/vf_deinterlace_v4l2m2m.c
+@@ -885,6 +885,9 @@ static int deint_v4l2m2m_filter_frame(AVFilterLink *link, AVFrame *in)
+     av_log(priv, AV_LOG_DEBUG, "input pts: %"PRId64" field :%d interlaced: %d\n",
+           in->pts, !!(in->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST), !!(in->flags & AV_FRAME_FLAG_INTERLACED));
+ 
++    if (ctx->cur_in_frame)
++        av_frame_free(&ctx->cur_in_frame);
++
+     ctx->cur_in_frame = in;
+ 
+     if (ctx->field_order == V4L2_FIELD_ANY) {
+-- 
+2.55.0
+

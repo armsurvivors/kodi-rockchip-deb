@@ -1,4 +1,4 @@
-name: kodi-vendor-rkmpp-latest
+name: kodi-latest
 
 on:
   schedule:
@@ -37,7 +37,8 @@ jobs:
           - { id: 'forky', image: 'debian:forky' }
           - { id: 'resolute', image: 'ubuntu:resolute' }
         ffmpeg:
-          - { branch: '8.1', id: '81' }
+          - { branch: '8.1', id: '81rkmpp', dockerfile: 'Dockerfile.kodi.rkmpp', extraTag: 'rkmpp' }
+          - { branch: 'n9.0.2', id: '902v4l2requests', dockerfile: 'Dockerfile.kodi.v4l2requests', extraTag: 'v4l2requests' }
         dav1d:
           - { branch: '1.5.4', id: '154' }
     steps:
@@ -57,12 +58,12 @@ jobs:
         timeout-minutes: 180
         with:
           context: .
-          file: ./Dockerfile
+          file: ./${{ matrix.ffmpeg.dockerfile }}
           platforms: linux/${{ matrix.arch.name }}
           load: false
           pull: true # bring in updated versions of preexisting GH images
           push: false
-          tags: kodi-rockchip-gbm:${{ matrix.arch.name }}
+          tags: kodi-rockchip-gbm:${{ matrix.arch.name }}-${{ matrix.ffmpeg.extraTag }}
           build-args: |
             PACKAGE_VERSION=${{needs.prepare.outputs.created}}
             BASE_IMAGE=${{ matrix.distro.image }}
@@ -94,12 +95,12 @@ jobs:
         with:
           target: containerized-kodi # floating stage in the Dockerfile
           context: .
-          file: ./Dockerfile
+          file: ./${{ matrix.ffmpeg.dockerfile }}
           platforms: linux/${{ matrix.arch.name }}
           load: false
           pull: false
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ matrix.distro.id }}-latest,ghcr.io/${{ github.repository }}:${{ matrix.distro.id }}-${{needs.prepare.outputs.created}}
+          tags: ghcr.io/${{ github.repository }}:${{ matrix.distro.id }}-${{ matrix.ffmpeg.extraTag }}-latest,ghcr.io/${{ github.repository }}:${{ matrix.distro.id }}-${{ matrix.ffmpeg.extraTag }}-${{needs.prepare.outputs.created}}
           build-args: |
             PACKAGE_VERSION=${{needs.prepare.outputs.created}}
             BASE_IMAGE=${{ matrix.distro.image }}
