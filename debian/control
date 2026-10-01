@@ -14,7 +14,7 @@ Conflicts: kodi
 Section: video
 Pre-Depends: bash (>= 4.0)
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Suggests: pulseaudio
+Suggests: pulseaudio, udisks2, avahi-daemon, dbus
 XB-Kodi-Rockchip-Flavor: @FLAVOR@
 XB-Kodi-Rockchip-Build: @BUILD_INFO@
 XB-Kodi-Rockchip-Components: @COMPONENTS@

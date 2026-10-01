@@ -51,7 +51,7 @@ apt-get -y install \
 	libsqlite3-dev libssl-dev libtag1-dev libtiff5-dev libtinyxml-dev libtinyxml2-dev \
 	libudev-dev libunistring-dev libvorbis-dev libxslt1-dev libxt-dev libxrandr-dev rapidjson-dev \
 	zlib1g-dev default-jre libgbm-dev libinput-dev libxkbcommon-dev libcec-dev \
-	libmariadb-dev liblirc-dev nlohmann-json3-dev bison
+	libmariadb-dev liblirc-dev nlohmann-json3-dev bison patchelf
 
 du -h /var/cache/apt
 du -h /var/lib/apt
@@ -172,6 +172,18 @@ RUN wget "https://kodi.jellyfin.org/repository.jellyfin.kodi.zip"
 RUN unzip repository.jellyfin.kodi.zip
 RUN rm repository.jellyfin.kodi.zip
 RUN ls -lah /usr/local/share/kodi/addons /usr/local/share/kodi/addons/repository.jellyfin.kodi
+
+# Pin our own /usr/local libs (dav1d, libdisplay-info, plus MPP/RGA for rkmpp; FFmpeg itself is static) via RUNPATH:
+# ld.so.conf lists /usr/lib/<triplet> before /usr/local/lib, so eg. a distro libdav1d7 (pulled by any distro libavcodec)
+# or a PPA's librockchip-mpp1 would otherwise be picked at runtime instead of ours.
+RUN <<-SET_RUNPATH
+runpath="/usr/local/lib:/usr/local/lib/$(gcc -dumpmachine)"
+for elf in /usr/local/lib/kodi/kodi-gbm /usr/local/bin/ffmpeg /usr/local/bin/ffprobe; do
+	[ -f "${elf}" ] || { echo "ERROR: ${elf} not found" >&2; exit 1; }
+	patchelf --set-rpath "${runpath}" "${elf}"
+	readelf -d "${elf}" | grep -F "RUNPATH" || { echo "ERROR: no RUNPATH on ${elf}" >&2; exit 1; }
+done
+SET_RUNPATH
 
 ### ------- packaging
 
