@@ -1,95 +1,259 @@
-### Warning: vendor/legacy/bsp kernel stuff
+# kodi-rockchip-deb
 
-`UPDATED: early May 2026 :: Status: WORKS!`
+> Kodi (`master`, GBM, GLES) with hardware-accelerated video decoding for Rockchip boards running Armbian. Ships as
+> container images and as `.deb` packages. Versions for mainline (rockchip64-edge) and vendor (rk35xx-vendor) kernels.
 
-- for Rockchip rk35xx devices that support rkmpp and rkrga
-    - known to work with `rk3588`, `rk3588s`, `rk3576`, `rk3566`, `rk3568`, `rk3528` and `rk3518` with varying levels of
-      hw support and stability
-- Requires either:
-    - Armbian rk35xx vendor kernel (6.1-rkr5 or later, with backported Panthor; requires 24.1+ mesa)
-    - Armbian rk35xx legacy kernel (5.10-rkr8, 5.10.290, which requires mali blobs/panfork - NOT RECOMMENDED NOR TESTED
-      but might work)
+`UPDATED: October 2026`
 
-### kodi-rockchip-deb
+There are two **completely separate flavors**. Pick the one that matches the **kernel** your board runs:
 
-> mainline Kodi for rk35xx hwaccel Rockchip's MPP and RGA via ffmpeg-rockchip, via boogie/nyanmisaka/joshua/amazingfate
-> magic; rk bsp/vendor/legacy kernel required.
+| Flavor             | Kernel                                             | ffmpeg                                                                                 | HW decode via                                     |
+|--------------------|----------------------------------------------------|----------------------------------------------------------------------------------------|---------------------------------------------------|
+| **`rkmpp`**        | Rockchip vendor/BSP (Armbian `vendor`, `6.1-rkrX`) | [ffmpeg-rockchip](https://github.com/nyanmisaka/ffmpeg-rockchip) `8.1` + rkmpp + rkrga | Rockchip MPP (`/dev/mpp_service`)                 |
+| **`v4l2requests`** | Mainline (Armbian `rockchip64` `edge`)             | FFmpeg `n9.0.2` + V4L2 Request API patches                                             | V4L2 stateless decoders (`hantro`, `rkvdec`, ...) |
 
-### Caveats
+Check which kernel you're on with `uname -r`; a `-vendor-rk35xx` / `-rk35xx` style kernel needs `rkmpp`, a
+`-edge-rockchip64` style kernel needs `v4l2requests`. **The flavors are not interchangeable**: the `rkmpp` build won't
+find MPP on mainline, and the `v4l2requests` build won't find any stateless decoders on the vendor kernel.
+
+Both flavors are built for **Debian `trixie`**, **Debian `forky`** and **Ubuntu `resolute`**, `arm64` only.
+
+## Caveats
 
 Understand:
 
-- this is meant to be installed on a CLI/server Armbian image, and will disable any display manager (GDM3/SDDM/LightDM)
-  to take over the display itself.
-- ⚠️ it's not a proper Debian package as it deploys to `/usr/local`
-    - The sample systemd units run as root.
-- ‼️ Using a vendor kernel like Rockchip's has inherent security implications.
-    - For proper, mainline, work see LibreELEC.tv
+- This is meant for a CLI/server Armbian image. Kodi runs directly on GBM/KMS, so **no X11/Wayland/display manager may
+  be running**. The `.deb` disables GDM3/SDDM/LightDM on install.
+- ⚠️ The `.deb` is not a proper Debian package: everything (Kodi, ffmpeg, dav1d, and for `rkmpp` also MPP/RGA) is
+  deployed to `/usr/local`. It works, but if it bothers you, use the container instead.
+- The container and the sample systemd units run Kodi as root, privileged.
+- ‼️ `rkmpp`: using a vendor kernel like Rockchip's has inherent security implications. If you can, prefer mainline
+  (`v4l2requests`), or see [LibreELEC](https://libreelec.tv/) for a proper, polished, mainline experience.
 
-#### Features
+## Flavor: `rkmpp` (vendor kernel)
 
-- mainline Kodi
-    - In the beggining there was boogie PR https://github.com/xbmc/xbmc/pull/24431 -- we cherry-picked from that and
-      life was good.
-    - Then that PR got merged -- we got from master, and life was good.
-    - Then, the whoile thing got reverted in https://github.com/xbmc/xbmc/pull/25864
-    - So now we revert the revert so Rockchip does the boogie again
-    - May'2026: boogie/reardonia/chewitt at-it again, see https://github.com/xbmc/xbmc/pull/27402 - using plain `master`
-      again
-- ffmpeg-rockchip 7.1 from nyanmisaka
-- fully accelerated (`GBM`+`rkmpp`+`rkrga`),
-  see https://github.com/nyanmisaka/ffmpeg-rockchip/wiki/Rendering#kodi-under-gbm
+`Status: WORKS!`
+
+- For Rockchip rk35xx devices that support rkmpp and rkrga
+    - known to work with `rk3588`, `rk3588s`, `rk3576`, `rk3566`, `rk3568`, `rk3528` and `rk3518` with varying levels of
+      hw support and stability
+- Requires either:
+    - Armbian rk35xx `vendor` kernel (`6.1-rkr5` or later, with backported Panthor; requires mesa 24.1+) — recommended
+    - Armbian rk35xx `legacy` kernel (`5.10-rkr8`, 5.10.290, which requires mali blobs/panfork) — NOT RECOMMENDED NOR
+      TESTED, but might work
+- (rk3588) make sure Panthor is enabled: check `/boot/armbianEnv.txt` for `overlays=panthor-gpu`
+    - Really, this won't work without Panthor; check it initialized correctly with `dmesg --color=always | grep panthor`
+    - Ensure you have the required Mali firmware; it is in `armbian-firmware`, installed by default
+    - for other rk35xx, make sure you have the required mali blobs or panfrost going
+- Fully accelerated (`GBM` + `rkmpp` + `rkrga`),
+  see [Kodi under GBM](https://github.com/nyanmisaka/ffmpeg-rockchip/wiki/Rendering#kodi-under-gbm)
     - > _This type of rendering is the fastest method you can get. To run kodi with gbm support, the active Desktop
       Environment must be stopped so that Kodi can directly interact with KMS_
-- works with Armbian rockchip rk35xx vendor kernel
 
-### Install
+## Flavor: `v4l2requests` (mainline kernel)
 
-- Flash an Armbian CLI image for your board (`trixie` is best for now - May 2025)
-    - Alternatively, you can use an Armbian desktop image, but GDM3/SDDM/LightDM will be disabled and Kodi will take
-      over
-    - For CLI images, you still need the pathor overlay (for vendor `6.1-rkrX`) or mali-blob/panfork (for `5.10-rkrX`)
-- (rk3588) Make sure you have panthor enabled - check `/boot/armbianEnv.txt` for `overlays=panthor-gpu`
-    - Really, this won't work without panthor; make sure init is initialized correctly with
-      `dmesg --color=always | grep panthor`
-        - Ensure you've the required Mali firmware, it should be present in `apt install armbian-firmware` which is
-          installed by default
-    - for other rk35xx, make sure you have the required mali blobs or panfrost going
-- Download the .deb from the [releases page](https://github.com/armsurvivors/kodi-rockchip-deb/releases), appropriate
-  for your Armbian distro (`bookworm`, or `trixie`)
-- From an SSH or console connection (not in X11 or Wayland),
-    - ✅ install with `apt install ./kodi-rockchip-gbm*.deb` - it will download a ton of dependencies
-    - ❌ `dpkg -i` won't work as it doesn't pull dependencies
+`Status: NEW, needs testers!`
+
+- Absolutely all credits on this to LibreELEC. Hats off.
+- For boards running a **mainline** kernel, such as Armbian `rockchip64` `edge`
+- Uses the kernel's V4L2 stateless decoders via the V4L2 Request API (`hantro`, `rkvdec`, `rkvdec2`, ...): which codecs
+  get hardware decoding depends on your SoC and on what your kernel's drivers support
+    - Software fallback for everything else: ffmpeg native h264/hevc/vp9, and `dav1d` for AV1
+- FFmpeg `n9.0.2` with the V4L2 Request API hwaccel patch series (h264, hevc, vp8, vp9, av1, mpeg2) plus the V4L2 m2m
+  deinterlace filter, as used by LibreELEC
+- Kodi with LibreELEC's DRMPRIME filter patches, so the deinterlacer can be used with DRM PRIME output
+- Recent kernel uAPI required: the build checks `linux/videodev2.h` for all needed stateless controls (including the
+  HEVC `EXT_SPS_ST_RPS`/`LT_RPS` ones), taking `linux-libc-dev` from `trixie-backports` on Debian trixie
+- Use a mainline GPU driver (Panthor/Panfrost via mesa); no blobs
+
+## Common: Kodi bits
+
+- Kodi `master`, built for `gbm` windowing and `gles` rendering
+    - In the beginning there was boogie's PR https://github.com/xbmc/xbmc/pull/24431 -- we cherry-picked from that and
+      life was good.
+    - Then that PR got merged -- we built from master, and life was good.
+    - Then, the whole thing got reverted in https://github.com/xbmc/xbmc/pull/25864
+    - So we reverted the revert so Rockchip does the boogie again
+    - May 2026: boogie/reardonia/chewitt at it again, see https://github.com/xbmc/xbmc/pull/27402 -- using plain
+      `master` again
+- `dav1d` `1.5.4` for fast software AV1 decoding
+- `libdisplay-info` (hard dependency for Kodi GBM)
+- `visualization.shadertoy` and `screensaver.shadertoy` add-ons
+- The [Jellyfin Kodi repository](https://kodi.jellyfin.org/) add-on is preinstalled for convenience
+- LibreELEC keymap patch: the remote's power button shows the shutdown menu
+
+## Prepare the board
+
+Same for both flavors and both install methods:
+
+- Flash an Armbian **CLI** image for your board, with the kernel for the flavor you chose (`vendor` for `rkmpp`, `edge`
+  for `v4l2requests`)
+    - A desktop image also works, but its display manager must be stopped/disabled so Kodi can take over KMS; you might
+      need a reboot to clean up display server usage
+- Use a userspace matching one of the builds: Debian `trixie`, Debian `forky` or Ubuntu `resolute`
+    - for the container method this only matters a bit (the image brings its own userspace), but matching is still
+      a good idea
+- Do the flavor-specific GPU checks described above
+
+## Install: containers (recommended)
+
+Images are published at
+[ghcr.io/armsurvivors/kodi-rockchip-deb](https://github.com/armsurvivors/kodi-rockchip-deb/pkgs/container/kodi-rockchip-deb),
+tagged `<distro>-<flavor>-<version>`:
+
+| Tag                               | Meaning                                             |
+|-----------------------------------|-----------------------------------------------------|
+| `trixie-rkmpp-latest`             | Debian trixie, vendor kernel flavor, latest build   |
+| `trixie-v4l2requests-latest`      | Debian trixie, mainline kernel flavor, latest build |
+| `forky-rkmpp-latest`              | Debian forky, vendor kernel flavor                  |
+| `forky-v4l2requests-latest`       | Debian forky, mainline kernel flavor                |
+| `resolute-rkmpp-latest`           | Ubuntu resolute, vendor kernel flavor               |
+| `resolute-v4l2requests-latest`    | Ubuntu resolute, mainline kernel flavor             |
+| `<distro>-<flavor>-YYYYMMDD-HHMM` | Pinned build, same timestamp as the GitHub release  |
+
+> ℹ️ The old `<distro>-latest` tags (without a flavor) predate the split and are no longer updated.
+
+Install Docker, containerd+[nerdctl](https://github.com/containerd/nerdctl) or Podman, stop any display manager, then
+run (here: mainline kernel, trixie; swap the tag for your flavor/distro):
+
+```bash
+# nerdctl
+nerdctl run -it --rm --privileged --network host \
+  --volume /dev:/dev --volume /run:/run \
+  --volume /srv/kodi:/root/.kodi \
+  ghcr.io/armsurvivors/kodi-rockchip-deb:trixie-v4l2requests-latest \
+  kodi --logging=console --windowing=gbm --audio-backend=alsa
+
+# docker: exactly the same arguments
+docker run -it --rm --privileged --network host \
+  --volume /dev:/dev --volume /run:/run \
+  --volume /srv/kodi:/root/.kodi \
+  ghcr.io/armsurvivors/kodi-rockchip-deb:trixie-v4l2requests-latest \
+  kodi --logging=console --windowing=gbm --audio-backend=alsa
+
+# podman: same again (run as root, rootless can't drive KMS)
+sudo podman run -it --rm --privileged --network host \
+  --volume /dev:/dev --volume /run:/run \
+  --volume /srv/kodi:/root/.kodi \
+  ghcr.io/armsurvivors/kodi-rockchip-deb:trixie-v4l2requests-latest \
+  kodi --logging=console --windowing=gbm --audio-backend=alsa
+```
+
+- `--privileged` + `/dev` give Kodi access to DRM/KMS, the GPU, the video decoder (s), input devices, ALSA and CEC
+- `/run` exposes udev/dbus to the container (input hotplug, etc)
+- `/srv/kodi:/root/.kodi` keeps your Kodi config, library and add-ons across container restarts; pick any host path
+- `--network host` for UPnP/Zeroconf/web remote/EventServer
+- To keep it running as a service, use `--detach --restart unless-stopped` instead of `-it --rm`
+- To pick up a new build, `pull` the tag again and recreate the container
+
+### Companion containers
+
+Optional, from the same repo, for the bits the `.deb` would otherwise set up on the host (`trixie`/`forky` tags):
+
+- `ghcr.io/armsurvivors/kodi-rockchip-deb/pulseaudio:<distro>-latest`: PulseAudio in system mode, using the same
+  `system.pa` as the `.deb`; run Kodi with `--audio-backend=pulseaudio` and `--env PULSE_SERVER=127.0.0.1`
+- `ghcr.io/armsurvivors/kodi-rockchip-deb/avahi:<distro>-latest`: Avahi daemon, for Zeroconf
+- `ghcr.io/armsurvivors/kodi-rockchip-deb/sendspin:<distro>-latest`:
+  [Sendspin](https://github.com/Sendspin/sendspin-cli) multi-room audio daemon (plays via the PulseAudio container)
+
+Run them the same way (`--privileged --network host --volume /dev:/dev --volume /run:/run`).
+
+## Install: `.deb` packages
+
+Download from the [releases page](https://github.com/armsurvivors/kodi-rockchip-deb/releases) the `.deb` matching both
+your **flavor** and your **distro**. Files are named
+`kodi-rockchip-gbm_arm64_kodi_master_ffmpeg_<ffmpeg>_<distro>.deb`:
+
+| Flavor         | `trixie`                                                                | `forky`                                | `resolute`                                |
+|----------------|-------------------------------------------------------------------------|----------------------------------------|-------------------------------------------|
+| `rkmpp`        | `kodi-rockchip-gbm_arm64_kodi_master_ffmpeg_81rkmpp_trixie.deb`         | `..._ffmpeg_81rkmpp_forky.deb`         | `..._ffmpeg_81rkmpp_resolute.deb`         |
+| `v4l2requests` | `kodi-rockchip-gbm_arm64_kodi_master_ffmpeg_902v4l2requests_trixie.deb` | `..._ffmpeg_902v4l2requests_forky.deb` | `..._ffmpeg_902v4l2requests_resolute.deb` |
+
+Both flavors install as the same package (`kodi-rockchip-gbm`), so only one can be installed at a time.
+
+- From an SSH or console connection (not in X11 or Wayland):
+    - ✅ install with `sudo apt install ./kodi-rockchip-gbm_*.deb` -- it will pull in a ton of dependencies
+    - ❌ `dpkg -i` won't work, as it doesn't pull dependencies
     - ℹ️ during install, it will disable your display manager if you have one running
-- Start the service with `sudo systemctl start kodi`
-    - `kodi` service uses ALSA directly, look around for the PulseAudio version (`kodi-pulse`) if you prefer that
-- Configure Kodi in Player > Videos, set DRM Prime and HW accel and render "Direct to Plane"
+- Start the service with `sudo systemctl start kodi`; enable it at boot with `sudo systemctl enable kodi`
+    - `kodi` uses ALSA directly; there's also `kodi-pulse` (with a system-mode `pulseaudio` unit) if you prefer
+      PulseAudio
+    - config lives in `/root/.kodi`
 
-### Running with Docker/containerd
+## Configure Kodi
 
-- Prepare an Armbian CLI image the same way as above, but don't install the .deb
-- Instead install Docker or containerd+nerdctl
-- Stop any display manager if you have one running
-- Run the container with:
-  - `nerdctl run -it --privileged --network host --volume /dev:/dev --volume /run:/run ghcr.io/armsurvivors/kodi-rockchip-deb:trixie-latest kodi --logging=console`
-    - similar for Docker
-- You can add more `--volume` mounts for `/root/.kodi` so your config persists
+- Settings > Player > Videos: enable hardware acceleration with **DRM PRIME**, and set render method to **Direct to
+  Plane**
+- `v4l2requests`: if you need deinterlacing, pick the deinterlace method in the video OSD settings while playing
 
-### Troubleshooting
+## Troubleshooting
 
-- If converting a desktop image, you might need to reboot to cleanup display server usage.
-- Tested on rk3588, other rk35xx untested; try and report back (3566/3568 testers needed)
+- Black screen / Kodi can't open the display: something else holds KMS. Stop the display manager (or reboot after
+  disabling it), and make sure nothing else is using the console framebuffer.
+- No hardware decoding:
+    - check you're running the right flavor for your kernel (see the table at the top)
+    - `rkmpp`: `ls -la /dev/mpp_service /dev/rga`; MPP load is visible with `watch -n 1 cat /proc/mpp_service/load`
+    - `v4l2requests`: `ls -la /dev/media* /dev/video*` and `v4l2-ctl --list-devices` should show the stateless
+      decoder (s); Kodi's log (`--logging=console`) shows which hwaccel was picked
+- Tested mostly on rk3588; other SoCs: try and report back (3566/3568 testers needed, and anything on `v4l2requests`)
 
 ## TO-DO
 
 - [ ] Don't run as root via systemd
-- [ ] Don't expose Pulseaudio to the network
+- [ ] Don't expose PulseAudio to the network
 - [x] Fix MCE Remote OK/Back buttons (via LibreELEC patches)
+- [x] Mainline kernel support (`v4l2requests`)
 
 ## Building
 
-- This is built in a Docker container
-- Look at the GHA workflow for the steps
-- Definitely requires `docker buildx` / `BuildKit`
-- Output is an empty image with a .deb -- use buildx and --output type=local to get the .deb out of there
-- Can only be built _on_ arm64 - no cross-compilation
+- Everything is built in Docker, one Dockerfile per flavor:
+    - `Dockerfile.kodi.rkmpp` (see `build.sh`)
+    - `Dockerfile.kodi.v4l2requests` (see `build-v4l2requests.sh`)
+- Look at the GHA workflow (`.github/workflows/kodi-latest.yml`) for the full matrix (distro x flavor)
+- Definitely requires `docker buildx` / BuildKit
+- The default target is an empty image with just the `.deb` -- use `--output type=local,dest=out` to get it out
+- The `containerized-kodi` target is the runnable image (base distro + the `.deb` installed)
+- Pass `--build-arg BASE_IMAGE=debian:trixie` (or `debian:forky`, `ubuntu:resolute`) to choose the distro
+- Can only be built _on_ arm64 -- no cross-compilation
+
+## Credits
+
+None of this would exist without the people below. All the hard work is theirs; this repo just glues it together.
+
+### `rkmpp` (vendor kernel)
+
+- [boogie (hbiyik)](https://github.com/hbiyik) for the Kodi Rockchip work
+  ([#24431](https://github.com/xbmc/xbmc/pull/24431), [#27402](https://github.com/xbmc/xbmc/pull/27402)) and ffmpeg
+  rkmpp/rkrga integration
+- [nyanmisaka](https://github.com/nyanmisaka) for [ffmpeg-rockchip](https://github.com/nyanmisaka/ffmpeg-rockchip) and
+  the `jellyfin-mpp`/`jellyfin-rga` trees of [MPP](https://github.com/nyanmisaka/mpp) and
+  [RGA](https://github.com/nyanmisaka/rk-mirrors)
+- [Joshua Riek](https://github.com/Joshua-Riek) and [amazingfate](https://github.com/amazingfate) for Rockchip/Ubuntu
+  packaging and enablement
+- reardonia and [chewitt](https://github.com/chewitt) for pushing the Kodi side upstream again
+- Rockchip, for MPP and RGA; Armbian, for the vendor kernel with backported Panthor
+
+### `v4l2requests` (mainline kernel)
+
+- [LibreELEC](https://github.com/LibreELEC/LibreELEC.tv): the patch series used here comes straight from LibreELEC;
+  this flavor rips off LE massively, all credits to them
+- FFmpeg V4L2 Request API hwaccel series:
+    - [Jonas Karlman (Kwiboo)](https://github.com/Kwiboo): hwcontext/device probing, common request code, mpeg2, av1,
+      Broadcom SAND128; plus the Kodi DRMPRIME filter support
+    - [Jernej Škrabec](https://github.com/jernejsk): h264 and hevc hwaccels, AFBC, the V4L2 m2m deinterlace filter;
+      plus the Kodi DRMPRIME deinterlace filter
+    - Boris Brezillon (Collabora): vp8 and vp9 hwaccels, h264 slice context bits
+    - Detlev Casanova (Collabora): HEVC `sps_st_rps` control support
+    - [Christian Hewitt (chewitt)](https://github.com/chewitt): deinterlace filter fixes, NV12M and Amlogic pixel
+      formats
+    - Gus Bourg: colour metadata fallback, Amlogic AM21C pixel format
+- Collabora and the mainline media/Rockchip kernel folks, for the stateless decoder drivers (`hantro`, `rkvdec`,
+  `rkvdec2`) and the uAPI they expose
+- Armbian, for the `rockchip64` `edge` kernel
+
+### Common
+
+- [Matthias Reichl (HiassofT)](https://github.com/HiassofT): remote power button keymap patch (via LibreELEC)
+- The [Kodi](https://github.com/xbmc/xbmc) team, [FFmpeg](https://ffmpeg.org/),
+  [dav1d](https://code.videolan.org/videolan/dav1d) and
+  [libdisplay-info](https://gitlab.freedesktop.org/emersion/libdisplay-info)
