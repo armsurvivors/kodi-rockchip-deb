@@ -207,14 +207,33 @@ Both flavors install as the same package (`kodi-rockchip-gbm`), so only one can 
 
 ## Building
 
-- Everything is built in Docker, one Dockerfile per flavor:
-    - `Dockerfile.kodi.rkmpp` (see `build.sh`)
-    - `Dockerfile.kodi.v4l2requests` (see `build-v4l2requests.sh`)
+- Everything is built in Docker, one Dockerfile per flavor: `Dockerfile.kodi.rkmpp` and `Dockerfile.kodi.v4l2requests`
+- Use `./build.sh`, driven by environment variables; it shows a summary of the settings and planned operations for a
+  few seconds before building:
+
+| Variable          | Default                                     | Meaning                                                              |
+|-------------------|---------------------------------------------|----------------------------------------------------------------------|
+| `FLAVOR`          | `rkmpp`                                     | `rkmpp` (vendor kernel) or `v4l2requests` (mainline kernel)          |
+| `DISTRO`          | `trixie`                                    | `trixie`, `forky` or `resolute`                                      |
+| `BASE_IMAGE`      | `debian:<DISTRO>` / `ubuntu:resolute`       | override the base image                                              |
+| `BUILD_DEB`       | `yes`                                       | build the `.deb`                                                     |
+| `EXPORT_DEB`      | `yes`                                       | `yes`: write the `.deb` to `OUTPUT`; `no`: load the `.deb`-only image as `DEB_TAG` |
+| `OUTPUT`          | `./out`                                     | where the exported `.deb` lands                                      |
+| `DEB_TAG`         | `kodi-rockchip-gbm:<DISTRO>-<FLAVOR>-deb`   | tag for the `.deb`-only image (when not exporting)                   |
+| `BUILD_CONTAINER` | `yes`                                       | also build the runnable container (`containerized-kodi` stage)       |
+| `CONTAINER_TAG`   | `kodi-rockchip-gbm:<DISTRO>-<FLAVOR>`       | tag for the runnable container                                       |
+| `PACKAGE_VERSION` | Dockerfile default                          | version stamped into the `.deb`                                      |
+| `BUILD_CMD`       | `docker buildx build`                       | build command                                                        |
+| `SUMMARY_DELAY`   | `5`                                         | seconds to show the summary before building (`0` to skip)            |
+
+```bash
+FLAVOR=v4l2requests DISTRO=forky ./build.sh                 # .deb to ./out + container
+FLAVOR=rkmpp BUILD_CONTAINER=no ./build.sh                  # just the .deb
+BUILD_DEB=no CONTAINER_TAG=ghcr.io/me/kodi:test ./build.sh  # just the container
+```
+
 - Look at the GHA workflow (`.github/workflows/kodi-latest.yml`) for the full matrix (distro x flavor)
 - Definitely requires `docker buildx` / BuildKit
-- The default target is an empty image with just the `.deb` -- use `--output type=local,dest=out` to get it out
-- The `containerized-kodi` target is the runnable image (base distro + the `.deb` installed)
-- Pass `--build-arg BASE_IMAGE=debian:trixie` (or `debian:forky`, `ubuntu:resolute`) to choose the distro
 - Can only be built _on_ arm64 -- no cross-compilation
 
 ## Credits
