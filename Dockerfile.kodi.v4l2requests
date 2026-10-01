@@ -147,14 +147,14 @@ RUN cmake ../kodi -DCMAKE_INSTALL_PREFIX=/usr/local -DCORE_PLATFORM_NAME=gbm -DA
 WORKDIR /src
 RUN git clone --branch Piers https://github.com/xbmc/visualization.shadertoy.git
 WORKDIR /src/visualization.shadertoy/build
-RUN cmake -DADDONS_TO_BUILD=visualization.shadertoy -DADDON_SRC_PREFIX=../.. -DCMAKE_INSTALL_PREFIX=/usr/local/share/kodi/addons -DCMAKE_BUILD_TYPE=Release -DPACKAGE_ZIP=1 /src/kodi/cmake/addons
+RUN cmake -DADDONS_TO_BUILD=visualization.shadertoy -DAPP_RENDER_SYSTEM=gles -DADDON_SRC_PREFIX=../.. -DCMAKE_INSTALL_PREFIX=/usr/local/share/kodi/addons -DCMAKE_BUILD_TYPE=Release -DPACKAGE_ZIP=1 /src/kodi/cmake/addons
 RUN make
 
 # Lets build & install shadertoy screensaver addon
 WORKDIR /src
 RUN git clone --branch Piers https://github.com/xbmc/screensaver.shadertoy.git
 WORKDIR /src/screensaver.shadertoy/build
-RUN cmake -DADDONS_TO_BUILD=screensaver.shadertoy -DADDON_SRC_PREFIX=../.. -DCMAKE_INSTALL_PREFIX=/usr/local/share/kodi/addons -DCMAKE_BUILD_TYPE=Release -DPACKAGE_ZIP=1 /src/kodi/cmake/addons
+RUN cmake -DADDONS_TO_BUILD=screensaver.shadertoy -DAPP_RENDER_SYSTEM=gles -DADDON_SRC_PREFIX=../.. -DCMAKE_INSTALL_PREFIX=/usr/local/share/kodi/addons -DCMAKE_BUILD_TYPE=Release -DPACKAGE_ZIP=1 /src/kodi/cmake/addons
 RUN make
 
 # Lets preinstall the Jellyfin Kodi repository add-on, just for convenience
