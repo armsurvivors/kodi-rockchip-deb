@@ -18,7 +18,7 @@ DEB_TAG="${DEB_TAG:-kodi-rockchip-gbm:${DISTRO}-${FLAVOR}-deb}"
 CONTAINER_TAG="${CONTAINER_TAG:-kodi-rockchip-gbm:${DISTRO}-${FLAVOR}}"
 PACKAGE_VERSION="${PACKAGE_VERSION:-}"      # empty: Dockerfile default (keeps the build cache warm)
 BUILD_CMD="${BUILD_CMD:-docker buildx build}"
-SUMMARY_DELAY="${SUMMARY_DELAY:-5}"         # seconds to show the summary before building; 0 to skip
+SUMMARY_DELAY="${SUMMARY_DELAY:-5}"         # seconds to show the summary before building (ENTER skips); 0 to skip
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
@@ -72,8 +72,13 @@ echo "  Operations:"
 for i in "${!ops[@]}"; do echo "    $((i + 1)). ${ops[$i]}"; done
 echo "========================================================="
 if [[ "${SUMMARY_DELAY}" -gt 0 ]]; then
-	echo "Starting in ${SUMMARY_DELAY}s; Ctrl-C to abort..."
-	sleep "${SUMMARY_DELAY}"
+	if [[ -t 0 ]]; then # interactive: ENTER skips the wait
+		echo "Starting in ${SUMMARY_DELAY}s; ENTER to start now, Ctrl-C to abort..."
+		read -r -s -t "${SUMMARY_DELAY}" _ || true # times out non-zero; that's fine
+	else
+		echo "Starting in ${SUMMARY_DELAY}s; Ctrl-C to abort..."
+		sleep "${SUMMARY_DELAY}"
+	fi
 fi
 
 read -r -a build_cmd <<< "${BUILD_CMD}"

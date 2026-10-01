@@ -187,6 +187,17 @@ Both flavors install as the same package (`kodi-rockchip-gbm`), so only one can 
     - it only changes the _defaults_: if you changed those settings before (or reuse an old `~/.kodi`), your values
       win; check them, or reset them to default, in Settings > Player > Videos
 
+### Which build am I running?
+
+- In Kodi: Settings > System information, the **Git:** line at the bottom reads
+  `<kodi commit date>-<kodi hash>-<flavor>-ffmpeg-<ffmpeg branch>-<distro>-build-<package version>`, e.g.
+  `20260930-1a2b3c4-v4l2requests-ffmpeg-n9.0.2-trixie-build-20261001-1200`; the same string is in the first lines of
+  Kodi's log
+    - the Summary page also shows the running kernel version (vendor `-rk35xx` vs mainline `-rockchip64`)
+- `.deb`: `dpkg -s kodi-rockchip-gbm` shows the `Kodi-Rockchip-Flavor`, `Kodi-Rockchip-Build` and
+  `Kodi-Rockchip-Components` fields; it also `Provides: kodi-rockchip-gbm-<flavor>`
+- Anywhere (incl. containers): `head -2 /usr/local/share/kodi/system/settings/appliance.xml`
+
 ## Troubleshooting
 
 - Black screen / Kodi can't open the display: something else holds KMS. Stop the display manager (or reboot after

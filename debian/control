@@ -5,13 +5,18 @@ Priority: optional
 Build-Depends: debhelper (>= 13.16~), lsb-release, bash (>= 4.0), dh-sequence-single-binary
 X-DH-Compat: 14
 Standards-Version: 3.9.6
-Homepage: https://kodi.tv/
+Homepage: https://github.com/armsurvivors/kodi-rockchip-deb
 
 Package: kodi-rockchip-gbm
-Provides: kodi
+Architecture: @ARCH@
+Provides: kodi, kodi-rockchip-gbm-@FLAVOR@
 Conflicts: kodi
-Description: kodi gbm for rockchip (rkmpp or v4l2requests)
 Section: video
 Pre-Depends: bash (>= 4.0)
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Suggests: pulseaudio
+XB-Kodi-Rockchip-Flavor: @FLAVOR@
+XB-Kodi-Rockchip-Build: @BUILD_INFO@
+XB-Kodi-Rockchip-Components: @COMPONENTS@
+Description: @SYNOPSIS@
+@LONG_DESCRIPTION@

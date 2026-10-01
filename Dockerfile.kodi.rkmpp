@@ -42,6 +42,7 @@ ALL_DEB_DEPS
 ARG FFMPEG_BRANCH="8.1"
 ARG DAV1D_BRANCH="1.5.4"
 ARG KODI_BRANCH="master"
+ARG FLAVOR="rkmpp"
 SHELL ["/bin/bash", "-e", "-c"]
 WORKDIR /src
 RUN git -c advice.detachedHead=false clone https://gitlab.freedesktop.org/emersion/libdisplay-info.git libdisplay-info && \
@@ -101,8 +102,16 @@ WORKDIR /src/kodi
 RUN for p in /src/patches-kodi/common/*.patch; do echo "Applying patch ${p} ..."; patch -p1 < "$p"; done
 
 # Kodi build. the --build step actually downloads things and that might fail, so retry it a few times.
+# GIT_VERSION replaces Kodi's git stamp, shown as "Git:" in System Information and in the log header; tells flavor apart.
+# It ends up unquoted in a cmake command line, so only [A-Za-z0-9._-] allowed.
+# PACKAGE_VERSION is declared only here, as any change to it invalidates the cache from this point on (Kodi build included).
 WORKDIR /src/kodi-build
-RUN cmake ../kodi -DCMAKE_INSTALL_PREFIX=/usr/local -DCORE_PLATFORM_NAME=gbm -DAPP_RENDER_SYSTEM=gles -DENABLE_INTERNAL_FMT=ON -DENABLE_INTERNAL_FLATBUFFERS=ON -DENABLE_INTERNAL_TAGLIB=ON -DENABLE_INTERNAL_SWIG=ON && \
+ARG PACKAGE_VERSION="20260513"
+RUN KODI_COMMIT="$(git -C ../kodi log -1 --date=format:%Y%m%d --format=%cd-%h)" && \
+    KODI_GIT_VERSION="${KODI_COMMIT}-${FLAVOR}-ffmpeg-${FFMPEG_BRANCH}-$(lsb_release -c -s)-build-${PACKAGE_VERSION}" && \
+    { [[ "${KODI_GIT_VERSION}" =~ ^[0-9]{8}-[0-9a-f]{7,}-[A-Za-z0-9._-]+$ ]] || { echo "ERROR: bad Kodi GIT_VERSION '${KODI_GIT_VERSION}'" >&2; exit 1; }; } && \
+    echo "${KODI_GIT_VERSION}" | tee /src/kodi-git-version
+RUN cmake ../kodi -DCMAKE_INSTALL_PREFIX=/usr/local -DCORE_PLATFORM_NAME=gbm -DAPP_RENDER_SYSTEM=gles -DENABLE_INTERNAL_FMT=ON -DENABLE_INTERNAL_FLATBUFFERS=ON -DENABLE_INTERNAL_TAGLIB=ON -DENABLE_INTERNAL_SWIG=ON -DGIT_VERSION="$(< /src/kodi-git-version)" && \
     cmake --build . -- -j$(nproc) || cmake --build . -- -j$(nproc) || cmake --build . -- -j$(nproc) && \
     make install
 
@@ -138,8 +147,6 @@ WORKDIR /pkg/src
 ADD debian /pkg/src/debian
 # Appliance settings: default to DRM PRIME hw accel + Direct-To-Plane rendering. Kodi loads it from special://xbmc/system/settings/.
 ADD kodi/appliance.xml /pkg/src/usr/local/share/kodi/system/settings/appliance.xml
-RUN python3 -c "import xml.etree.ElementTree as ET; ET.parse('/pkg/src/usr/local/share/kodi/system/settings/appliance.xml')" && \
-    ls -la /pkg/src/usr/local/share/kodi/system/settings/
 
 # For Pulseaudio, we need to add a system.pa file. This is a hack.
 # The unit file sets env PULSE_CONFIG_PATH=/usr/local/share/pulse-kodi
@@ -149,19 +156,13 @@ ADD pulseaudio/system.pa /pkg/src/usr/local/share/pulse-kodi/system.pa
 WORKDIR /pkg/src
 RUN echo "usr/*" > debian/kodi-rockchip-gbm.install
 
-# Create the "Architecture:" field in control; ARG invalidates the cache.
+# Render flavor/version-specific metadata (debian/control, debian/changelog, appliance.xml build info). ARGs here invalidate the cache.
+ADD packaging/render-metadata.sh /pkg/render-metadata.sh
 ARG OS_ARCH="arm64"
-RUN echo "Architecture: ${OS_ARCH}" >> /pkg/src/debian/control
-
-# Create the Changelog, fake. ARG here invalidates the cache.
-ARG PACKAGE_VERSION="20260513"
 ARG FFMPEG_ID="81rkmpp"
-RUN echo "kodi-rockchip-gbm (${PACKAGE_VERSION}-kodi-${KODI_BRANCH}-ffmpeg-${FFMPEG_ID}) stable; urgency=medium" >> /pkg/src/debian/changelog && \
-    echo "" >> /pkg/src/debian/changelog && \
-    echo "  * Not a real changelog. Sorry." >> /pkg/src/debian/changelog && \
-    echo "" >> /pkg/src/debian/changelog && \
-    echo " -- Ricardo Pardini <ricardo@pardini.net>  Wed, 15 Sep 2021 14:18:33 +0200" >> /pkg/src/debian/changelog && \
-    cat /pkg/src/debian/changelog
+RUN /pkg/render-metadata.sh /pkg/src && \
+    python3 -c "import xml.etree.ElementTree as ET; ET.parse('/pkg/src/usr/local/share/kodi/system/settings/appliance.xml')" && \
+    cat /pkg/src/debian/control /pkg/src/debian/changelog /pkg/src/usr/local/share/kodi/system/settings/appliance.xml
 
 # Build the package, don't sign it, don't lint it, compress fast with xz
 WORKDIR /pkg/src

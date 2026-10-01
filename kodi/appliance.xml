@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
+<!-- kodi-rockchip-gbm @BUILD_INFO@: @COMPONENTS@ -->
 <!-- Kodi appliance settings: overrides the setting *defaults* from system/settings/linux.xml.  -->
 <!-- Installed to special://xbmc/system/settings/appliance.xml, loaded last by CSettings.        -->
 <!-- Values the user already changed (in ~/.kodi/userdata/guisettings.xml) still take precedence. -->
+<!-- The @...@ placeholders are rendered at build time by packaging/render-metadata.sh.         -->
 <settings version="1">
   <section id="player">
     <category id="videoplayer">
