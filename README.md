@@ -182,9 +182,10 @@ Both flavors install as the same package (`kodi-rockchip-gbm`), so only one can 
 
 ## Configure Kodi
 
-- Settings > Player > Videos: enable hardware acceleration with **DRM PRIME**, and set render method to **Direct to
-  Plane**
-- `v4l2requests`: if you need deinterlacing, pick the deinterlace method in the video OSD settings while playing
+- Both flavors ship a Kodi `appliance.xml` (`/usr/local/share/kodi/system/settings/appliance.xml`) that defaults
+  Settings > Player > Videos to hardware acceleration with **DRM PRIME** and render method **Direct to Plane**
+    - it only changes the _defaults_: if you changed those settings before (or reuse an old `~/.kodi`), your values
+      win; check them, or reset them to default, in Settings > Player > Videos
 
 ## Troubleshooting
 

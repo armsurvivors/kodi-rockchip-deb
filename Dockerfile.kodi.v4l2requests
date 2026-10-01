@@ -173,8 +173,10 @@ RUN rm -rf /usr/local/include && cp -pr /usr/local /pkg/src/usr/
 # Prepare debian binary package
 WORKDIR /pkg/src
 ADD debian /pkg/src/debian
-# Example GUI settings. This is probably old and unuseful these days.
-ADD userdata/guisettings.xml /pkg/src/usr/local/share/kodi/example_userdata_guisettings.xml
+# Appliance settings: default to DRM PRIME hw accel + Direct-To-Plane rendering. Kodi loads it from special://xbmc/system/settings/.
+ADD kodi/appliance.xml /pkg/src/usr/local/share/kodi/system/settings/appliance.xml
+RUN python3 -c "import xml.etree.ElementTree as ET; ET.parse('/pkg/src/usr/local/share/kodi/system/settings/appliance.xml')" && \
+    ls -la /pkg/src/usr/local/share/kodi/system/settings/
 
 # For Pulseaudio, we need to add a system.pa file. This is a hack.
 # The unit file sets env PULSE_CONFIG_PATH=/usr/local/share/pulse-kodi
