@@ -5,25 +5,25 @@
 
 `UPDATED: October 2026`
 
-There are two **completely separate flavors**. Pick the one that matches the **kernel** your board runs:
+There are two completely separate flavors. Pick the one that matches the kernel your board runs:
 
-| Flavor             | Kernel                                             | ffmpeg                                                                                 | HW decode via                                     |
-|--------------------|----------------------------------------------------|----------------------------------------------------------------------------------------|---------------------------------------------------|
-| **`rkmpp`**        | Rockchip vendor/BSP (Armbian `vendor`, `6.1-rkrX`) | [ffmpeg-rockchip](https://github.com/nyanmisaka/ffmpeg-rockchip) `8.1` + rkmpp + rkrga | Rockchip MPP (`/dev/mpp_service`)                 |
-| **`v4l2requests`** | Mainline (Armbian `rockchip64` `edge`)             | FFmpeg `n9.0.2` + V4L2 Request API patches                                             | V4L2 stateless decoders (`hantro`, `rkvdec`, ...) |
+| Flavor         | Kernel                                             | ffmpeg                                                                                 | HW decode via                                     |
+|----------------|----------------------------------------------------|----------------------------------------------------------------------------------------|---------------------------------------------------|
+| `rkmpp`        | Rockchip vendor/BSP (Armbian `vendor`, `6.1-rkrX`) | [ffmpeg-rockchip](https://github.com/nyanmisaka/ffmpeg-rockchip) `8.1` + rkmpp + rkrga | Rockchip MPP (`/dev/mpp_service`)                 |
+| `v4l2requests` | Mainline (Armbian `rockchip64` `edge`)             | FFmpeg `n9.0.2` + V4L2 Request API patches                                             | V4L2 stateless decoders (`hantro`, `rkvdec`, ...) |
 
 Check which kernel you're on with `uname -r`; a `-vendor-rk35xx` / `-rk35xx` style kernel needs `rkmpp`, a
-`-edge-rockchip64` style kernel needs `v4l2requests`. **The flavors are not interchangeable**: the `rkmpp` build won't
+`-edge-rockchip64` style kernel needs `v4l2requests`. The flavors are not interchangeable: the `rkmpp` build won't
 find MPP on mainline, and the `v4l2requests` build won't find any stateless decoders on the vendor kernel.
 
-Both flavors are built for **Debian `trixie`**, **Debian `forky`** and **Ubuntu `resolute`**, `arm64` only.
+Both flavors are built for Debian `trixie`, Debian `forky` and Ubuntu `resolute`, `arm64` only.
 
 ## Caveats
 
 Understand:
 
-- This is meant for a CLI/server Armbian image. Kodi runs directly on GBM/KMS, so **no X11/Wayland/display manager may
-  be running**. The `.deb` disables GDM3/SDDM/LightDM on install.
+- This is meant for a CLI/server Armbian image. Kodi runs directly on GBM/KMS, so no X11/Wayland/display manager may
+  be running. The `.deb` disables GDM3/SDDM/LightDM on install.
 - ⚠️ The `.deb` is not a proper Debian package: everything (Kodi, ffmpeg, dav1d, and for `rkmpp` also MPP/RGA) is
   deployed to `/usr/local`. It works, but if it bothers you, use the container instead.
 - The container and the sample systemd units run Kodi as root, privileged.
@@ -55,7 +55,7 @@ Understand:
 `Status: NEW, needs testers!`
 
 - Absolutely all credits on this to LibreELEC. Hats off.
-- For boards running a **mainline** kernel, such as Armbian `rockchip64` `edge`
+- For boards running a mainline kernel, such as Armbian `rockchip64` `edge`
 - Uses the kernel's V4L2 stateless decoders via the V4L2 Request API (`hantro`, `rkvdec`, `rkvdec2`, ...): which codecs
   get hardware decoding depends on your SoC and on what your kernel's drivers support
     - Software fallback for everything else: ffmpeg native h264/hevc/vp9, and `dav1d` for AV1
@@ -86,7 +86,7 @@ Understand:
 
 Same for both flavors and both install methods:
 
-- Flash an Armbian **CLI** image for your board, with the kernel for the flavor you chose (`vendor` for `rkmpp`, `edge`
+- Flash an Armbian CLI image for your board, with the kernel for the flavor you chose (`vendor` for `rkmpp`, `edge`
   for `v4l2requests`)
     - A desktop image also works, but its display manager must be stopped/disabled so Kodi can take over KMS; you might
       need a reboot to clean up display server usage
@@ -178,7 +178,7 @@ Required values left empty make Compose fail with a message naming them.
 ## Install: `.deb` packages
 
 Download from the [releases page](https://github.com/armsurvivors/kodi-rockchip-deb/releases) the `.deb` matching both
-your **flavor** and your **distro**. Files are named
+your flavor and your distro. Files are named
 `kodi-rockchip-gbm_arm64_kodi_master_ffmpeg_<ffmpeg>_<distro>.deb`:
 
 | Flavor         | `trixie`                                                                | `forky`                                | `resolute`                                |
@@ -200,13 +200,13 @@ Both flavors install as the same package (`kodi-rockchip-gbm`), so only one can 
 ## Configure Kodi
 
 - Both flavors ship a Kodi `appliance.xml` (`/usr/local/share/kodi/system/settings/appliance.xml`) that defaults
-  Settings > Player > Videos to hardware acceleration with **DRM PRIME** and render method **Direct to Plane**
+  Settings > Player > Videos to hardware acceleration with DRM PRIME and render method Direct to Plane
     - it only changes the _defaults_: if you changed those settings before (or reuse an old `~/.kodi`), your values
       win; check them, or reset them to default, in Settings > Player > Videos
 
 ### Which build am I running?
 
-- In Kodi: Settings > System information, the **Git:** line at the bottom reads
+- In Kodi: Settings > System information, the Git: line at the bottom reads
   `<kodi commit date>-<kodi hash>-<flavor>-ffmpeg-<ffmpeg branch>-<distro>-build-<package version>`, e.g.
   `20260930-1a2b3c4-v4l2requests-ffmpeg-n9.0.2-trixie-build-20261001-1200`; the same string is in the first lines of
   Kodi's log
