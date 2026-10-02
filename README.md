@@ -158,6 +158,23 @@ Optional, from the same repo, for the bits the `.deb` would otherwise set up on 
 
 Run them the same way (`--privileged --network host --volume /dev:/dev --volume /run:/run`).
 
+### Docker Compose
+
+Ready-made stacks under [`deploy/docker-compose/`](deploy/docker-compose):
+
+- `kodi`: just Kodi, using the host's dbus/avahi-daemon, ALSA and/or system-wide PulseAudio, and default IR keymap
+- `kodi-pulse-irkeymap-sendspin`: adds PulseAudio, a custom IR keymap and Sendspin; uses the host's dbus/avahi-daemon
+- `kodi-avahi-dbus-pulse-irkeymap-sendspin`: same, but brings its own dbus/avahi-daemon
+
+In the chosen directory:
+
+```bash
+cp .env.example .env   # set the ALSA card ID, Sendspin identity, IR receiver, etc.
+docker compose up -d
+```
+
+Required values left empty make Compose fail with a message naming them.
+
 ## Install: `.deb` packages
 
 Download from the [releases page](https://github.com/armsurvivors/kodi-rockchip-deb/releases) the `.deb` matching both

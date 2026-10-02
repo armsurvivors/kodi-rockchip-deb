@@ -1,0 +1,153 @@
+# Requires the host's own dbus and avahi-daemon running (apt install avahi-daemon); Kodi publishes AirPlay through them.
+
+name: kodi-rockchip
+
+x-common: &common
+  restart: unless-stopped
+  network_mode: host
+  privileged: true
+  environment: &common-env
+    TZ: ${TZ:-Etc/UTC}
+  volumes:
+    - /dev:/dev
+  logging: &common-logging
+    driver: json-file
+    options: { max-size: "20m", max-file: "5" }
+
+services:
+
+  pulse:
+    <<: *common
+    container_name: kodi-rockchip-pulse
+    image: ${PULSE_IMAGE:-ghcr.io/armsurvivors/kodi-rockchip-deb/pulseaudio:trixie-latest}
+    entrypoint: ["/usr/bin/pulseaudio"]
+    command:
+      - --system
+      - --disallow-exit
+      - --exit-idle-time=-1
+      - --disable-shm
+      - --enable-memfd
+      - --realtime
+      - --log-target=stderr
+    volumes:
+      - /dev:/dev
+      - run-pulse:/run/pulse
+    configs:
+      - { source: pulse-client-conf, target: /etc/pulse/client.conf, mode: 0444 }
+      - { source: pulse-daemon-conf, target: /etc/pulse/daemon.conf, mode: 0444 }
+      - { source: pulse-system-pa,   target: /etc/pulse/system.pa,   mode: 0444 }
+    healthcheck:
+      test: ["CMD-SHELL", "test -S /run/pulse/native && pactl info >/dev/null 2>&1"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  kodi-keymap:
+    container_name: kodi-rockchip-keymap
+    image: ${KODI_IMAGE:-ghcr.io/armsurvivors/kodi-rockchip-deb:trixie-rkmpp-latest}
+    restart: "no"
+    network_mode: host
+    privileged: true
+    environment:
+      <<: *common-env
+      IR_BY_ID: ${IR_BY_ID:?set IR_BY_ID in .env}
+    volumes:
+      - /dev:/dev
+    configs:
+      - { source: ir-keymap, target: /etc/ir-keymap/keymap.txt, mode: 0444 }
+    logging: *common-logging
+    entrypoint: ["/bin/bash", "-lc"]
+    # `$$` escapes Compose interpolation, yielding a literal `$` in the shell.
+    command:
+      - |
+        set -euxo pipefail
+        EVENT="$$(basename "$$(readlink -f "$$IR_BY_ID")")"
+        # /sys/.../rc/rcN/inputM/eventN -> rcN
+        DEV="$$(basename "$$(dirname "$$(dirname "$$(readlink -f "/sys/class/input/$$EVENT")")")")"
+        echo "Remote $$IR_BY_ID -> $$EVENT -> IR device $$DEV"
+        ir-keytable -s "$$DEV" -w /etc/ir-keymap/keymap.txt
+        echo "Resulting keymap:"
+        ir-keytable -s "$$DEV" -r
+        exit 0
+
+  kodi:
+    <<: *common
+    container_name: kodi-rockchip-kodi
+    image: ${KODI_IMAGE:-ghcr.io/armsurvivors/kodi-rockchip-deb:trixie-rkmpp-latest}
+    depends_on:
+      pulse:       { condition: service_healthy }
+      kodi-keymap: { condition: service_completed_successfully }
+    entrypoint: ["kodi"]
+    command: ["--logging=console", "--audio-backend=pulseaudio"]
+    volumes:
+      - /dev:/dev
+      # libinput's udev backend needs the udev database, or Kodi sees no input devices.
+      - /run/udev:/run/udev:ro
+      # Host system bus (directory, not socket, so it survives a dbus restart); reaches the host avahi-daemon.
+      - /run/dbus:/run/dbus
+      - run-pulse:/run/pulse
+      - ${KODI_DATA_DIR:-/root/.kodi}:/root/.kodi
+
+  sendspin:
+    <<: *common
+    container_name: kodi-rockchip-sendspin
+    image: ${SENDSPIN_IMAGE:-ghcr.io/armsurvivors/kodi-rockchip-deb/sendspin:trixie-latest}
+    depends_on:
+      pulse: { condition: service_healthy }
+    entrypoint: ["sendspin"]
+    # Fixed --id keeps a stable Music Assistant player identity.
+    command:
+      - daemon
+      - --audio-device
+      - pulse
+      - --hardware-volume
+      - "false"
+      - --disable-mpris
+      - --id
+      - ${SENDSPIN_ID:?set SENDSPIN_ID in .env}
+      - --manufacturer
+      - ${SENDSPIN_MANUFACTURER:-Armsurvivors}
+      - --product-name
+      - ${SENDSPIN_PRODUCT_NAME:-kodi-rockchip}
+      - --name
+      - ${SENDSPIN_NAME:?set SENDSPIN_NAME in .env}
+    volumes:
+      - /dev:/dev
+      - run-pulse:/run/pulse
+      - sendspin-config:/root/.config/sendspin
+
+configs:
+
+  pulse-client-conf:
+    content: |
+      ## Configuration file for PulseAudio clients. See pulse-client.conf(5).
+
+  pulse-daemon-conf:
+    content: |
+      ## Configuration file for the PulseAudio daemon. See pulse-daemon.conf(5).
+
+  # Compose interpolates ${...} in this content from .env.
+  pulse-system-pa:
+    content: |
+      #!/usr/bin/pulseaudio -nF
+      load-module module-alsa-card device_id="${PULSE_ALSA_DEVICE_ID:?set PULSE_ALSA_DEVICE_ID in .env}" name="my-usb-soundcard" card_name="alsa_card.my-usb-soundcard" namereg_fail=false tsched=yes fixed_latency_range=no ignore_dB=no deferred_volume=yes use_ucm=yes
+      set-card-profile alsa_card.my-usb-soundcard ${PULSE_CARD_PROFILE:-output:analog-stereo}
+      set-default-sink alsa_output.my-usb-soundcard.analog-stereo
+      set-sink-volume alsa_output.my-usb-soundcard.analog-stereo 65536
+      set-sink-mute alsa_output.my-usb-soundcard.analog-stereo 0
+      load-module module-native-protocol-unix auth-anonymous=1
+      load-module module-native-protocol-tcp auth-anonymous=1
+
+  # The `# table ..., type:` header line is mandatory for `ir-keytable -w`.
+  ir-keymap:
+    content: |
+      # table rc6_mce, type: RC6
+      0x800f040d KEY_HOME
+      0x800f0422 KEY_ENTER
+      0x800f0423 KEY_BACK
+      0x800f0424 KEY_CONTEXT_MENU
+
+volumes:
+  run-pulse:
+  sendspin-config:
