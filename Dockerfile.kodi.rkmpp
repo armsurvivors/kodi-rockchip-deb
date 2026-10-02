@@ -120,14 +120,29 @@ WORKDIR /src
 RUN git clone --branch Piers https://github.com/xbmc/visualization.shadertoy.git
 WORKDIR /src/visualization.shadertoy/build
 RUN cmake -DADDONS_TO_BUILD=visualization.shadertoy -DAPP_RENDER_SYSTEM=gles -DADDON_SRC_PREFIX=../.. -DCMAKE_INSTALL_PREFIX=/usr/local/share/kodi/addons -DCMAKE_BUILD_TYPE=Release -DPACKAGE_ZIP=1 /src/kodi/cmake/addons
-RUN make
+RUN make -j$(nproc) || make -j$(nproc) || make
 
 # Lets build & install shadertoy screensaver addon
 WORKDIR /src
 RUN git clone --branch Piers https://github.com/xbmc/screensaver.shadertoy.git
 WORKDIR /src/screensaver.shadertoy/build
 RUN cmake -DADDONS_TO_BUILD=screensaver.shadertoy -DAPP_RENDER_SYSTEM=gles -DADDON_SRC_PREFIX=../.. -DCMAKE_INSTALL_PREFIX=/usr/local/share/kodi/addons -DCMAKE_BUILD_TYPE=Release -DPACKAGE_ZIP=1 /src/kodi/cmake/addons
-RUN make
+RUN make -j$(nproc) || make -j$(nproc) || make
+
+#### Binary add-ons
+
+# Dependencies needed only by the binary add-ons below; installed here, after the Kodi build, so they can't affect it.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,target=/var/lib/apt,sharing=locked <<-ADDON_DEB_DEPS
+apt-get -y install \
+    libarchive-dev librtmp-dev libpugixml-dev liblzma-dev libmp3lame-dev
+ADDON_DEB_DEPS
+
+# Lets build & install commonly-required binary addons; the official repo has no Linux binaries, and distro ones conflict with us.
+# Sources come from Kodi's repo-binary-addons definitions; the build downloads things, so retry it a few times.
+WORKDIR /src/binary-addons/build
+RUN cmake -DADDONS_TO_BUILD="vfs.rar vfs.libarchive inputstream.adaptive inputstream.rtmp peripheral.joystick pvr.iptvsimple pvr.hts audioencoder.flac audioencoder.lame audioencoder.vorbis audioencoder.wav" -DAPP_RENDER_SYSTEM=gles -DCMAKE_INSTALL_PREFIX=/usr/local/share/kodi/addons -DCMAKE_BUILD_TYPE=Release -DPACKAGE_ZIP=1 /src/kodi/cmake/addons
+RUN make -j$(nproc) || make -j$(nproc) || make
+RUN for a in vfs.rar vfs.libarchive inputstream.adaptive inputstream.rtmp peripheral.joystick pvr.iptvsimple pvr.hts audioencoder.flac audioencoder.lame audioencoder.vorbis audioencoder.wav; do ls -lah "/usr/local/share/kodi/addons/${a}" || exit 1; done
 
 # Lets preinstall the Jellyfin Kodi repository add-on, just for convenience
 WORKDIR /usr/local/share/kodi/addons
