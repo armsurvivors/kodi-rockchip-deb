@@ -218,24 +218,58 @@ Both flavors install as the same package (`kodi-rockchip-gbm`), so only one can 
 
 ## Building
 
-- Everything is built in Docker, one Dockerfile per flavor: `Dockerfile.kodi.rkmpp` and `Dockerfile.kodi.v4l2requests`
+- Everything is built in Docker, from a single `Dockerfile.kodi` for both flavors; the `FLAVOR` build-arg (`rkmpp` or
+  `v4l2requests`) selects the `ffmpeg-<flavor>` stage, and BuildKit skips the other flavor's stages entirely
+
+```mermaid
+flowchart TD
+    BI[["BASE_IMAGE<br/>debian:trixie / forky, ubuntu:resolute"]]
+
+    subgraph common["Common to both flavors"]
+        base["<b>base</b><br/>apt deps (+ trixie-backports linux-libc-dev)<br/>clone libdisplay-info, dav1d, kodi<br/>wipe /usr/local, build dav1d + libdisplay-info"]
+    end
+
+    subgraph flavors["Flavor stages (only the selected one is built)"]
+        rk["<b>ffmpeg-rkmpp</b><br/>mpp + rga (nyanmisaka)<br/>ffmpeg-rockchip 8.1<br/>--enable-rkmpp --enable-rkrga<br/>KODI_PATCH_SETS=common"]
+        v4["<b>ffmpeg-v4l2requests</b><br/>videodev2.h stateless check<br/>FFmpeg n9.0.2 + V4L2 Request patches<br/>--enable-v4l2_m2m<br/>KODI_PATCH_SETS=common drmprime-filter"]
+    end
+
+    sel{"FROM ffmpeg-${FLAVOR}"}
+    ff["<b>ffmpeg</b><br/>shared checks:<br/>FFMPEG_DECODERS present, asm enabled"]
+    pk["<b>packager</b><br/>Kodi patches + build, shadertoy, binary add-ons,<br/>jellyfin repo, RUNPATH, render metadata, debuild<br/>→ /artifacts/*.deb"]
+    ck["<b>containerized-kodi</b><br/>BASE_IMAGE + installed .deb<br/>(pushed to ghcr.io)"]
+    sc["<b>(final, scratch)</b><br/>just the .deb<br/>(default target, --output local)"]
+    BI --> base
+    BI --> ck
+    base --> rk
+    base --> v4
+    rk -. " FLAVOR=rkmpp " .-> sel
+    v4 -. " FLAVOR=v4l2requests " .-> sel
+    sel --> ff
+    ff --> pk
+    pk -- " bind-mount /artifacts " --> ck
+    pk -- " COPY --from=packager " --> sc
+    pf[/"patches/ffmpeg/v4l2requests"/] --> v4
+    ctx[/"patches/kodi, debian/, kodi/appliance.xml,<br/>pulseaudio/system.pa, packaging/render-metadata.sh"/] --> pk
+```
+
 - Use `./build.sh`, driven by environment variables; it shows a summary of the settings and planned operations for a
   few seconds before building:
 
-| Variable          | Default                                     | Meaning                                                              |
-|-------------------|---------------------------------------------|----------------------------------------------------------------------|
-| `FLAVOR`          | `rkmpp`                                     | `rkmpp` (vendor kernel) or `v4l2requests` (mainline kernel)          |
-| `DISTRO`          | `trixie`                                    | `trixie`, `forky` or `resolute`                                      |
-| `BASE_IMAGE`      | `debian:<DISTRO>` / `ubuntu:resolute`       | override the base image                                              |
-| `BUILD_DEB`       | `yes`                                       | build the `.deb`                                                     |
-| `EXPORT_DEB`      | `yes`                                       | `yes`: write the `.deb` to `OUTPUT`; `no`: load the `.deb`-only image as `DEB_TAG` |
-| `OUTPUT`          | `./out`                                     | where the exported `.deb` lands                                      |
-| `DEB_TAG`         | `kodi-rockchip-gbm:<DISTRO>-<FLAVOR>-deb`   | tag for the `.deb`-only image (when not exporting)                   |
-| `BUILD_CONTAINER` | `yes`                                       | also build the runnable container (`containerized-kodi` stage)       |
-| `CONTAINER_TAG`   | `kodi-rockchip-gbm:<DISTRO>-<FLAVOR>`       | tag for the runnable container                                       |
-| `PACKAGE_VERSION` | Dockerfile default                          | version stamped into the `.deb`                                      |
-| `BUILD_CMD`       | `docker buildx build`                       | build command                                                        |
-| `SUMMARY_DELAY`   | `5`                                         | seconds to show the summary before building (`0` to skip)            |
+| Variable          | Default                                   | Meaning                                                                            |
+|-------------------|-------------------------------------------|------------------------------------------------------------------------------------|
+| `FLAVOR`          | `rkmpp`                                   | `rkmpp` (vendor kernel) or `v4l2requests` (mainline kernel)                        |
+| `DISTRO`          | `trixie`                                  | `trixie`, `forky` or `resolute`                                                    |
+| `BASE_IMAGE`      | `debian:<DISTRO>` / `ubuntu:resolute`     | override the base image                                                            |
+| `BUILD_DEB`       | `yes`                                     | build the `.deb`                                                                   |
+| `EXPORT_DEB`      | `yes`                                     | `yes`: write the `.deb` to `OUTPUT`; `no`: load the `.deb`-only image as `DEB_TAG` |
+| `OUTPUT`          | `./out`                                   | where the exported `.deb` lands                                                    |
+| `DEB_TAG`         | `kodi-rockchip-gbm:<DISTRO>-<FLAVOR>-deb` | tag for the `.deb`-only image (when not exporting)                                 |
+| `BUILD_CONTAINER` | `yes`                                     | also build the runnable container (`containerized-kodi` stage)                     |
+| `CONTAINER_TAG`   | `kodi-rockchip-gbm:<DISTRO>-<FLAVOR>`     | tag for the runnable container                                                     |
+| `PACKAGE_VERSION` | Dockerfile default                        | version stamped into the `.deb`                                                    |
+| `BUILD_CMD`       | `docker buildx build`                     | build command                                                                      |
+| `SUMMARY_DELAY`   | `5`                                       | seconds to show the summary before building (`0` to skip)                          |
 
 ```bash
 FLAVOR=v4l2requests DISTRO=forky ./build.sh                 # .deb to ./out + container

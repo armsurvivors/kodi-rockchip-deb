@@ -37,8 +37,8 @@ jobs:
           - { id: 'forky', image: 'debian:forky' }
           - { id: 'resolute', image: 'ubuntu:resolute' }
         ffmpeg:
-          - { branch: '8.1', id: '81rkmpp', dockerfile: 'Dockerfile.kodi.rkmpp', extraTag: 'rkmpp' }
-          - { branch: 'n9.0.2', id: '902v4l2requests', dockerfile: 'Dockerfile.kodi.v4l2requests', extraTag: 'v4l2requests' }
+          - { branch: '8.1', id: '81rkmpp', flavor: 'rkmpp', extraTag: 'rkmpp' }
+          - { branch: 'n9.0.2', id: '902v4l2requests', flavor: 'v4l2requests', extraTag: 'v4l2requests' }
         dav1d:
           - { branch: '1.5.4', id: '154' }
     steps:
@@ -58,7 +58,7 @@ jobs:
         timeout-minutes: 180
         with:
           context: .
-          file: ./${{ matrix.ffmpeg.dockerfile }}
+          file: ./Dockerfile.kodi
           platforms: linux/${{ matrix.arch.name }}
           load: false
           pull: true # bring in updated versions of preexisting GH images
@@ -68,6 +68,7 @@ jobs:
             PACKAGE_VERSION=${{needs.prepare.outputs.created}}
             BASE_IMAGE=${{ matrix.distro.image }}
             OS_ARCH=${{ matrix.arch.name }}
+            FLAVOR=${{ matrix.ffmpeg.flavor }}
             FFMPEG_BRANCH=${{ matrix.ffmpeg.branch }}
             FFMPEG_ID=${{ matrix.ffmpeg.id }}
             DAV1D_BRANCH=${{ matrix.dav1d.branch }}
@@ -95,7 +96,7 @@ jobs:
         with:
           target: containerized-kodi # floating stage in the Dockerfile
           context: .
-          file: ./${{ matrix.ffmpeg.dockerfile }}
+          file: ./Dockerfile.kodi
           platforms: linux/${{ matrix.arch.name }}
           load: false
           pull: false
@@ -105,6 +106,7 @@ jobs:
             PACKAGE_VERSION=${{needs.prepare.outputs.created}}
             BASE_IMAGE=${{ matrix.distro.image }}
             OS_ARCH=${{ matrix.arch.name }}
+            FLAVOR=${{ matrix.ffmpeg.flavor }}
             FFMPEG_BRANCH=${{ matrix.ffmpeg.branch }}
             FFMPEG_ID=${{ matrix.ffmpeg.id }}
             DAV1D_BRANCH=${{ matrix.dav1d.branch }}

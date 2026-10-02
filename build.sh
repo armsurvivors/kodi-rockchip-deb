@@ -28,7 +28,7 @@ for var in BUILD_DEB EXPORT_DEB BUILD_CONTAINER; do
 done
 
 case "${FLAVOR}" in
-	rkmpp | v4l2requests) DOCKERFILE="Dockerfile.kodi.${FLAVOR}" ;;
+	rkmpp | v4l2requests) DOCKERFILE="Dockerfile.kodi" ;;
 	*) die "FLAVOR must be 'rkmpp' or 'v4l2requests', got '${FLAVOR}'" ;;
 esac
 
@@ -40,7 +40,7 @@ esac
 
 [[ "${BUILD_DEB}" == "yes" || "${BUILD_CONTAINER}" == "yes" ]] || die "nothing to do: both BUILD_DEB and BUILD_CONTAINER are 'no'"
 
-declare -a build_args=("--build-arg" "BASE_IMAGE=${BASE_IMAGE}")
+declare -a build_args=("--build-arg" "BASE_IMAGE=${BASE_IMAGE}" "--build-arg" "FLAVOR=${FLAVOR}")
 [[ -n "${PACKAGE_VERSION}" ]] && build_args+=("--build-arg" "PACKAGE_VERSION=${PACKAGE_VERSION}")
 
 # Plan the operations, so the summary shows exactly what will run.

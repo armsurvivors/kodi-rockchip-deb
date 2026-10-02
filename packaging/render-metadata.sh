@@ -3,7 +3,7 @@
 #  - debian/control: Architecture, flavor fields and the description
 #  - debian/changelog: fake, single entry carrying the version
 #  - Kodi's appliance.xml: build info, as a header comment
-# Called from the Dockerfiles; inputs come from the environment (the Dockerfile ARGs).
+# Called from the Dockerfile; inputs come from the environment (the Dockerfile ARGs).
 set -euo pipefail
 
 PKG_SRC="${1:?usage: $0 <package source dir>}"
