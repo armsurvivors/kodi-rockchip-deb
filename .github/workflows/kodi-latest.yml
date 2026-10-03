@@ -8,6 +8,9 @@ on:
   #push:
   #  branches: [ main ]
 
+env:
+  KODI_BRANCH: Piers # Kodi 22.x release branch
+
 permissions:
   packages: write
   contents: write
@@ -69,6 +72,7 @@ jobs:
             BASE_IMAGE=${{ matrix.distro.image }}
             OS_ARCH=${{ matrix.arch.name }}
             FLAVOR=${{ matrix.ffmpeg.flavor }}
+            KODI_BRANCH=${{ env.KODI_BRANCH }}
             FFMPEG_BRANCH=${{ matrix.ffmpeg.branch }}
             FFMPEG_ID=${{ matrix.ffmpeg.id }}
             DAV1D_BRANCH=${{ matrix.dav1d.branch }}
@@ -107,6 +111,7 @@ jobs:
             BASE_IMAGE=${{ matrix.distro.image }}
             OS_ARCH=${{ matrix.arch.name }}
             FLAVOR=${{ matrix.ffmpeg.flavor }}
+            KODI_BRANCH=${{ env.KODI_BRANCH }}
             FFMPEG_BRANCH=${{ matrix.ffmpeg.branch }}
             FFMPEG_ID=${{ matrix.ffmpeg.id }}
             DAV1D_BRANCH=${{ matrix.dav1d.branch }}

@@ -10,7 +10,8 @@ ARG FLAVOR="rkmpp"
 ARG FFMPEG_BRANCH=""
 ARG FFMPEG_ID=""
 ARG DAV1D_BRANCH="1.5.4"
-ARG KODI_BRANCH="master"
+# Kodi 22.x "Piers" release branch; master is already 23.x
+ARG KODI_BRANCH="Piers"
 
 FROM ${BASE_IMAGE} AS base
 

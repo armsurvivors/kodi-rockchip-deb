@@ -1,6 +1,6 @@
 # kodi-rockchip-deb
 
-> Kodi (`master`, GBM, GLES) with hardware-accelerated video decoding for Rockchip boards running Armbian. Ships as
+> Kodi (`Piers` 22.x, GBM, GLES) with hardware-accelerated video decoding for Rockchip boards running Armbian. Ships as
 > container images and as `.deb` packages. Versions for mainline (rockchip64-edge) and vendor (rk35xx-vendor) kernels.
 
 `UPDATED: October 2026`
@@ -68,7 +68,7 @@ Understand:
 
 ## Common: Kodi bits
 
-- Kodi `master`, built for `gbm` windowing and `gles` rendering
+- Kodi `Piers` (22.x release branch), built for `gbm` windowing and `gles` rendering
     - In the beginning there was boogie's PR https://github.com/xbmc/xbmc/pull/24431 -- we cherry-picked from that and
       life was good.
     - Then that PR got merged -- we built from master, and life was good.
@@ -76,6 +76,7 @@ Understand:
     - So we reverted the revert so Rockchip does the boogie again
     - May 2026: boogie/reardonia/chewitt at it again, see https://github.com/xbmc/xbmc/pull/27402 -- using plain
       `master` again
+    - October 2026: Kodi branched `Piers` (22.x) off `master` (now 23.x alphas); we build from `Piers`
 - `dav1d` `1.5.4` for fast software AV1 decoding
 - `libdisplay-info` (hard dependency for Kodi GBM)
 - `visualization.shadertoy` and `screensaver.shadertoy` add-ons
@@ -179,12 +180,12 @@ Required values left empty make Compose fail with a message naming them.
 
 Download from the [releases page](https://github.com/armsurvivors/kodi-rockchip-deb/releases) the `.deb` matching both
 your flavor and your distro. Files are named
-`kodi-rockchip-gbm_arm64_kodi_master_ffmpeg_<ffmpeg>_<distro>.deb`:
+`kodi-rockchip-gbm_arm64_kodi_Piers_ffmpeg_<ffmpeg>_<distro>.deb`:
 
 | Flavor         | `trixie`                                                                | `forky`                                | `resolute`                                |
 |----------------|-------------------------------------------------------------------------|----------------------------------------|-------------------------------------------|
-| `rkmpp`        | `kodi-rockchip-gbm_arm64_kodi_master_ffmpeg_81rkmpp_trixie.deb`         | `..._ffmpeg_81rkmpp_forky.deb`         | `..._ffmpeg_81rkmpp_resolute.deb`         |
-| `v4l2requests` | `kodi-rockchip-gbm_arm64_kodi_master_ffmpeg_902v4l2requests_trixie.deb` | `..._ffmpeg_902v4l2requests_forky.deb` | `..._ffmpeg_902v4l2requests_resolute.deb` |
+| `rkmpp`        | `kodi-rockchip-gbm_arm64_kodi_Piers_ffmpeg_81rkmpp_trixie.deb`          | `..._ffmpeg_81rkmpp_forky.deb`         | `..._ffmpeg_81rkmpp_resolute.deb`         |
+| `v4l2requests` | `kodi-rockchip-gbm_arm64_kodi_Piers_ffmpeg_902v4l2requests_trixie.deb`  | `..._ffmpeg_902v4l2requests_forky.deb` | `..._ffmpeg_902v4l2requests_resolute.deb` |
 
 Both flavors install as the same package (`kodi-rockchip-gbm`), so only one can be installed at a time.
 

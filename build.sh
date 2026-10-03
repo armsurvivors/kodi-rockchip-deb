@@ -16,6 +16,7 @@ BUILD_CONTAINER="${BUILD_CONTAINER:-yes}"   # also build the runnable containeri
 OUTPUT="${OUTPUT:-${SRC}/out}"              # where the .deb lands when EXPORT_DEB=yes
 DEB_TAG="${DEB_TAG:-kodi-rockchip-gbm:${DISTRO}-${FLAVOR}-deb}"
 CONTAINER_TAG="${CONTAINER_TAG:-kodi-rockchip-gbm:${DISTRO}-${FLAVOR}}"
+KODI_BRANCH="${KODI_BRANCH:-}"              # empty: Dockerfile default (Piers)
 PACKAGE_VERSION="${PACKAGE_VERSION:-}"      # empty: Dockerfile default (keeps the build cache warm)
 BUILD_CMD="${BUILD_CMD:-docker buildx build}"
 SUMMARY_DELAY="${SUMMARY_DELAY:-5}"         # seconds to show the summary before building (ENTER skips); 0 to skip
@@ -41,6 +42,7 @@ esac
 [[ "${BUILD_DEB}" == "yes" || "${BUILD_CONTAINER}" == "yes" ]] || die "nothing to do: both BUILD_DEB and BUILD_CONTAINER are 'no'"
 
 declare -a build_args=("--build-arg" "BASE_IMAGE=${BASE_IMAGE}" "--build-arg" "FLAVOR=${FLAVOR}")
+[[ -n "${KODI_BRANCH}" ]] && build_args+=("--build-arg" "KODI_BRANCH=${KODI_BRANCH}")
 [[ -n "${PACKAGE_VERSION}" ]] && build_args+=("--build-arg" "PACKAGE_VERSION=${PACKAGE_VERSION}")
 
 # Plan the operations, so the summary shows exactly what will run.
@@ -66,6 +68,7 @@ printf '  %-16s %s\n' \
 	DEB_TAG "${DEB_TAG}" \
 	BUILD_CONTAINER "${BUILD_CONTAINER}" \
 	CONTAINER_TAG "${CONTAINER_TAG}" \
+	KODI_BRANCH "${KODI_BRANCH:-(Dockerfile default)}" \
 	PACKAGE_VERSION "${PACKAGE_VERSION:-(Dockerfile default)}" \
 	BUILD_CMD "${BUILD_CMD}"
 echo "  Operations:"
