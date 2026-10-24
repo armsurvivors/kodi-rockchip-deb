@@ -81,6 +81,8 @@ Understand:
 - FFmpeg built with GnuTLS, so `https://` streams (eg. HLS `.m3u8`) play directly
 - `libdisplay-info` (hard dependency for Kodi GBM)
 - `visualization.shadertoy` and `screensaver.shadertoy` add-ons
+- Binary add-ons (the official repo has none for Linux): `vfs.rar`, `vfs.libarchive`, `inputstream.adaptive`,
+  `inputstream.rtmp`, `peripheral.joystick` and `pvr.iptvsimple` (PVR IPTV Simple Client)
 - The [Jellyfin Kodi repository](https://kodi.jellyfin.org/) add-on is preinstalled for convenience
 - LibreELEC keymap patch: the remote's power button shows the shutdown menu
 
