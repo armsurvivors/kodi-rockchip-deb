@@ -78,6 +78,7 @@ Understand:
       `master` again
     - October 2026: Kodi branched `Piers` (22.x) off `master` (now 23.x alphas); we build from `Piers`
 - `dav1d` `1.5.4` for fast software AV1 decoding
+- FFmpeg built with GnuTLS, so `https://` streams (eg. HLS `.m3u8`) play directly
 - `libdisplay-info` (hard dependency for Kodi GBM)
 - `visualization.shadertoy` and `screensaver.shadertoy` add-ons
 - The [Jellyfin Kodi repository](https://kodi.jellyfin.org/) add-on is preinstalled for convenience
@@ -225,6 +226,8 @@ Both flavors install as the same package (`kodi-rockchip-gbm`), so only one can 
     - `rkmpp`: `ls -la /dev/mpp_service /dev/rga`; MPP load is visible with `watch -n 1 cat /proc/mpp_service/load`
     - `v4l2requests`: `ls -la /dev/media* /dev/video*` and `v4l2-ctl --list-devices` should show the stateless
       decoder (s); Kodi's log (`--logging=console`) shows which hwaccel was picked
+- Laggy UI on rk3318/rk3328 (Mali-450): the GPU devfreq governor (`simple_ondemand`) might keep the GPU at its lowest
+  clock; try `echo performance | sudo tee /sys/class/devfreq/ff300000.gpu/governor`
 - Tested mostly on rk3588; other SoCs: try and report back (3566/3568 testers needed, and anything on `v4l2requests`)
 
 ## TO-DO
