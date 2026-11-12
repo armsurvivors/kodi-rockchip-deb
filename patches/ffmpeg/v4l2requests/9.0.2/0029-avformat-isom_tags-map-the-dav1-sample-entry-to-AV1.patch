@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: CroqueMr <82093548+CroqueMr@users.noreply.github.com>
 Date: Tue, 20 Oct 2026 14:59:44 +0000
-Subject: [PATCH 29/44] avformat/isom_tags: map the dav1 sample entry to AV1
+Subject: [PATCH 29/46] avformat/isom_tags: map the dav1 sample entry to AV1
 
 Recognise 'dav1', the ISOBMFF sample entry for AV1-based Dolby Vision,
 as AV1.

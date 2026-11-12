@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Thu, 12 Nov 2026 14:48:28 +0100
-Subject: [PATCH 43/44] avfilter/scale_v4l2m2m: Don't fail when the consumer
+Subject: [PATCH 43/46] avfilter/scale_v4l2m2m: Don't fail when the consumer
  holds the capture buffers
 
 The converted frames are the filter's own capture buffers, lent out until

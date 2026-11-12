@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jernej Skrabec <jernej.skrabec@siol.net>
 Date: Thu, 8 Oct 2026 18:40:00 +0200
-Subject: [PATCH 38/44] avcodec/vc1: size the bitplanes of reduced resolution
+Subject: [PATCH 38/46] avcodec/vc1: size the bitplanes of reduced resolution
  pictures
 
 A Simple or Main profile picture of a MULTIRES sequence may be coded at
