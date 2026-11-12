@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jernej Skrabec <jernej.skrabec@siol.net>
+Date: Thu, 8 Oct 2026 18:39:59 +0200
+Subject: [PATCH 37/44] avcodec/vc1: read RESPIC only in I and P pictures
+
+RESPIC is present in Simple and Main profile I and P pictures only
+(SMPTE 421M 7.1.1.23, and the SMPTE reference decoder); B and BI
+pictures keep the value of the last I or P picture. The B check missed
+BI pictures, which are signalled as B pictures with BFRACTION = 0 and
+have been turned into AV_PICTURE_TYPE_BI by then, so 2 bits too many
+were read from the header of every BI picture of a MULTIRES sequence.
+
+Signed-off-by: Jernej Skrabec <jernej.skrabec@siol.net>
+(cherry picked from commit 0712abe9ffe5f88d618408ffbb103613704e0112)
+---
+ libavcodec/vc1.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/libavcodec/vc1.c b/libavcodec/vc1.c
+index ab247f0a7f..33ff7af358 100644
+--- a/libavcodec/vc1.c
++++ b/libavcodec/vc1.c
+@@ -696,7 +696,8 @@ int ff_vc1_parse_frame_header(VC1Context *v, GetBitContext* gb)
+     v->k_y = v->mvrange + 8; //k_y can be 8 9 10 11
+     v->range_x = 1 << (v->k_x - 1);
+     v->range_y = 1 << (v->k_y - 1);
+-    if (v->multires && v->s.pict_type != AV_PICTURE_TYPE_B)
++    if (v->multires && (v->s.pict_type == AV_PICTURE_TYPE_I ||
++                        v->s.pict_type == AV_PICTURE_TYPE_P))
+         v->respic = get_bits(gb, 2);
+ 
+     if (v->res_x8 && (v->s.pict_type == AV_PICTURE_TYPE_I || v->s.pict_type == AV_PICTURE_TYPE_BI)) {

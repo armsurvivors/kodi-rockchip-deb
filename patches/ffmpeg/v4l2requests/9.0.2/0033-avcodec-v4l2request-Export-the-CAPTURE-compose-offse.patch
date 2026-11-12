@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Christian Hewitt <christianshewitt@gmail.com>
+Date: Sun, 25 Oct 2026 18:34:15 +0000
+Subject: [PATCH 33/44] avcodec/v4l2request: Export the CAPTURE compose offset
+ as cropping
+
+The Rockchip decoder writes H.264 and HEVC AFBC frames 4 lines below the
+top of the buffer and reports that offset as the CAPTURE compose
+rectangle, but frames are exported as if the picture started at the
+top.
+
+Read the compose rectangle and add its top offset to the frame height
+and top cropping, so consumers can place the picture.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+---
+ libavcodec/v4l2_request.c                  |  4 ++++
+ libavutil/hwcontext_v4l2request.c          | 11 +++++++++++
+ libavutil/hwcontext_v4l2request_internal.h |  6 ++++++
+ 3 files changed, 21 insertions(+)
+
+diff --git a/libavcodec/v4l2_request.c b/libavcodec/v4l2_request.c
+index 4ac56d78f5..a550374858 100644
+--- a/libavcodec/v4l2_request.c
++++ b/libavcodec/v4l2_request.c
+@@ -522,6 +522,10 @@ static int v4l2_request_post_process(void *logctx, AVFrame *frame)
+         av_log(logctx, AV_LOG_ERROR, "driver decode error\n");
+         frame->decode_error_flags |= FF_DECODE_ERROR_INVALID_BITSTREAM;
+     }
++
++    // Export lines above the picture in the buffer as top cropping
++    frame->crop_top += ctx->fctxi->capture.top;
++    frame->height += ctx->fctxi->capture.top;
+     return 0;
+ }
+ 
+diff --git a/libavutil/hwcontext_v4l2request.c b/libavutil/hwcontext_v4l2request.c
+index d8c009ccc0..c5469bd4d4 100644
+--- a/libavutil/hwcontext_v4l2request.c
++++ b/libavutil/hwcontext_v4l2request.c
+@@ -520,6 +520,7 @@ static int v4l2request_probe_video_device(AVHWFramesContext *hwfc,
+     AVV4L2RequestFramesContextInternal *fctxi = fctx->internal;
+     struct v4l2_capability capability;
+     struct v4l2_create_buffers buffers;
++    struct v4l2_selection selection;
+     unsigned int capabilities;
+     int ret;
+ 
+@@ -668,6 +669,16 @@ static int v4l2request_probe_video_device(AVHWFramesContext *hwfc,
+         goto fail;
+     }
+ 
++    // The picture may start below the top of the CAPTURE buffer
++    selection = (struct v4l2_selection) {
++        .type = V4L2_BUF_TYPE_VIDEO_CAPTURE,
++        .target = V4L2_SEL_TGT_COMPOSE,
++    };
++    fctxi->capture.top = 0;
++    if (ioctl(fctxi->video_fd, VIDIOC_G_SELECTION, &selection) >= 0 &&
++        selection.r.top > 0)
++        fctxi->capture.top = selection.r.top;
++
+     // All tests passed, video device should be capable
+     return 0;
+ 
+diff --git a/libavutil/hwcontext_v4l2request_internal.h b/libavutil/hwcontext_v4l2request_internal.h
+index 20436b2b2d..947357260a 100644
+--- a/libavutil/hwcontext_v4l2request_internal.h
++++ b/libavutil/hwcontext_v4l2request_internal.h
+@@ -55,6 +55,12 @@ struct AVV4L2RequestFramesContextInternal {
+          */
+         uint32_t capabilities;
+ 
++        /**
++         * Lines between the top of the buffer and the picture, from the
++         * CAPTURE compose rectangle.
++         */
++        uint32_t top;
++
+         /**
+         * Buffer pool of allocated V4L2 buffers.
+         *

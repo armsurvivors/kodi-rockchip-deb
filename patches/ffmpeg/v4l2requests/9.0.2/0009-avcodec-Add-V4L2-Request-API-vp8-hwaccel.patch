@@ -1,7 +1,7 @@
-From c666fa4eff61a56b40d9dbb7f8734844726d55e4 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Boris Brezillon <boris.brezillon@collabora.com>
 Date: Wed, 22 May 2019 14:46:58 +0200
-Subject: [PATCH 09/22] avcodec: Add V4L2 Request API vp8 hwaccel
+Subject: [PATCH 09/44] avcodec: Add V4L2 Request API vp8 hwaccel
 
 Add a V4L2 Request API hwaccel for VP8.
 
@@ -339,6 +339,3 @@ index 970cdac311..5cb328dcd0 100644
  #endif
                                 NULL
                             },
--- 
-2.55.0
-

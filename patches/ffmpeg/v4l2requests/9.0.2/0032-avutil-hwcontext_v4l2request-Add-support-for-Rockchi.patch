@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Christian Hewitt <christianshewitt@gmail.com>
+Date: Sun, 25 Oct 2026 18:34:15 +0000
+Subject: [PATCH 32/44] avutil/hwcontext_v4l2request: Add support for Rockchip
+ AFBC pix fmts
+
+Map the Rockchip video decoder YUV 4:2:0 AFBC 16x16 capture formats to
+the DRM YUV420_8BIT and YUV420_10BIT formats with the Arm AFBC 16x16
+modifier. The bodies are packed and not split, so neither the sparse
+nor the split flag applies.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+---
+ libavutil/hwcontext_v4l2request.c | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/libavutil/hwcontext_v4l2request.c b/libavutil/hwcontext_v4l2request.c
+index b3a0998314..d8c009ccc0 100644
+--- a/libavutil/hwcontext_v4l2request.c
++++ b/libavutil/hwcontext_v4l2request.c
+@@ -53,6 +53,18 @@
+ #define V4L2_PIX_FMT_MESON_AM21B v4l2_fourcc('A', 'M', '2', 'B')
+ #endif
+ 
++/*
++ * Rockchip vdec AFBC capture formats: YUV 4:2:0 with 16x16 superblocks, no
++ * block split and packed superblock bodies.
++ */
++#ifndef V4L2_PIX_FMT_YUV420_8_AFBC_16X16
++#define V4L2_PIX_FMT_YUV420_8_AFBC_16X16 v4l2_fourcc('A', 'F', '1', '2')
++#endif
++
++#ifndef V4L2_PIX_FMT_YUV420_10_AFBC_16X16
++#define V4L2_PIX_FMT_YUV420_10_AFBC_16X16 v4l2_fourcc('A', 'F', '0', '1')
++#endif
++
+ typedef struct V4L2RequestVideoDecoder {
+     dev_t media_dev;
+     dev_t video_dev;
+@@ -129,6 +141,20 @@ static const struct {
+         .bit_depth = 10,
+     },
+ #endif
++    {
++        .pixelformat = V4L2_PIX_FMT_YUV420_8_AFBC_16X16,
++        .sw_format = AV_PIX_FMT_YUV420P,
++        .drm_format = DRM_FORMAT_YUV420_8BIT,
++        .format_modifier = DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16),
++        .bit_depth = 8,
++    },
++    {
++        .pixelformat = V4L2_PIX_FMT_YUV420_10_AFBC_16X16,
++        .sw_format = AV_PIX_FMT_YUV420P10,
++        .drm_format = DRM_FORMAT_YUV420_10BIT,
++        .format_modifier = DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16),
++        .bit_depth = 10,
++    },
+     /*
+      * Amlogic FBC uses one fourcc for both depths, so it needs an entry per
+      * bit depth - the DRM format and the modifier options differ.

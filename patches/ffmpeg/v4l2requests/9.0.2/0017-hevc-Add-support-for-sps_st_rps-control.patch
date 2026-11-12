@@ -1,7 +1,7 @@
-From 9b6dccf346faa6cd6327bf82704f3fc709e79661 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Detlev Casanova <detlev.casanova@collabora.com>
 Date: Wed, 9 Jul 2025 15:29:34 -0400
-Subject: [PATCH 17/22] hevc: Add support for sps_st_rps control
+Subject: [PATCH 17/44] hevc: Add support for sps_st_rps control
 
 Linux v7.1 brings support to 2 new V4L2 stateless controls:
  - hevc_ext_sps_lt_rps
@@ -323,6 +323,3 @@ index 9110128d85..8f76989b72 100644
              .abs_delta_rps_minus1 = sps->st_rps[i].abs_delta_rps - 1,
              .used_by_curr_pic_flag    = 0x0,
              .used_by_curr_pic_s0_flag = 0x0,
--- 
-2.55.0
-

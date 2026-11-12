@@ -1,7 +1,7 @@
-From acc75321d8229de68fc91be782f2540c5c34c9c1 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
 Date: Tue, 6 Aug 2024 09:06:02 +0000
-Subject: [PATCH 02/22] avutil/hwcontext_v4l2request: Probe for a capable media
+Subject: [PATCH 02/44] avutil/hwcontext_v4l2request: Probe for a capable media
  and video device
 
 Probe all media devices and its linked video devices to locate a video
@@ -623,6 +623,3 @@ index 3d92b63367..f99eea6eae 100644
  }
  
  static AVBufferRef *v4l2request_v4l2_buffer_alloc(AVHWFramesContext *hwfc,
--- 
-2.55.0
-

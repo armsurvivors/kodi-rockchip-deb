@@ -59,9 +59,16 @@ Understand:
 - Uses the kernel's V4L2 stateless decoders via the V4L2 Request API (`hantro`, `rkvdec`, `rkvdec2`, ...): which codecs
   get hardware decoding depends on your SoC and on what your kernel's drivers support
     - Software fallback for everything else: ffmpeg native h264/hevc/vp9, and `dav1d` for AV1
-- FFmpeg `n9.0.2` with the V4L2 Request API hwaccel patch series (h264, hevc, vp8, vp9, av1, mpeg2) plus the V4L2 m2m
-  deinterlace filter, as used by LibreELEC
+- FFmpeg `n9.0.2` with the V4L2 Request API hwaccel patch series (h264, hevc, vp8, vp9, av1, mpeg2, vc1) plus the V4L2
+  m2m deinterlace filter, as carried by LibreELEC (Christian Hewitt's `armsoc-9.0.2` branch)
+    - plus MediaTek MT8195/MT8395 (Genio 1200) support: MM21 tiled frames, and a `scale_v4l2m2m` filter that converts
+      them with the MDP3 for direct scanout
 - Kodi with LibreELEC's DRMPRIME filter patches, so the deinterlacer can be used with DRM PRIME output
+    - plus MediaTek patches: MM21 import through Mesa, MDP3 conversion for direct-to-plane, software fallback for
+      10-bit (MT2110), which nothing can display yet
+- Mesa from `trixie-backports` on Debian trixie (panfrost needs >= 25.2 for MediaTek tiled frames)
+- MediaTek: the SCP firmware (`mediatek/mt8195/scp.img`, from linux-firmware) must be on the host, or the decoder
+  won't start
 - Recent kernel uAPI required: the build checks `linux/videodev2.h` for all needed stateless controls (including the
   HEVC `EXT_SPS_ST_RPS`/`LT_RPS` ones), taking `linux-libc-dev` from `trixie-backports` on Debian trixie
 - Use a mainline GPU driver (Panthor/Panfrost via mesa); no blobs

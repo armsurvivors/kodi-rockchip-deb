@@ -1,7 +1,7 @@
-From 649e0351a3775e9f84ca006f669110837c4df7c3 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jernej Skrabec <jernej.skrabec@gmail.com>
 Date: Sun, 14 Dec 2025 01:12:06 +0000
-Subject: [PATCH 12/22] avutil/hwcontext_v4l2request: Add support for
+Subject: [PATCH 12/44] avutil/hwcontext_v4l2request: Add support for
  AFBC_16X16_SPLIT pix fmts
 
 Add support for YUV420_8_AFBC_16X16_SPLIT and YUV420_10_AFBC_16X16_SPLIT
@@ -78,6 +78,3 @@ index f99eea6eae..59abb94b14 100644
  
  #if defined(V4L2_PIX_FMT_NV12MT_COL128) && defined(V4L2_PIX_FMT_NV12MT_10_COL128)
      // Raspberry Pi formats need special handling
--- 
-2.55.0
-

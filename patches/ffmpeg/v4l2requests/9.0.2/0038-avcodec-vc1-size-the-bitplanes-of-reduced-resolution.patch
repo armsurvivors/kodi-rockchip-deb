@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jernej Skrabec <jernej.skrabec@siol.net>
+Date: Thu, 8 Oct 2026 18:40:00 +0200
+Subject: [PATCH 38/44] avcodec/vc1: size the bitplanes of reduced resolution
+ pictures
+
+A Simple or Main profile picture of a MULTIRES sequence may be coded at
+half the width and/or half the height of the sequence (RESPIC). Its
+bitplanes have one bit per macroblock of the picture as coded, so
+decoding them with the macroblock size of the sequence reads the wrong
+number of bits and desyncs the rest of the picture header.
+
+The macroblock layer of such pictures is still decoded at the size of
+the sequence, which this does not change, but the header is now parsed
+correctly, which is what hardware decoders need.
+
+Signed-off-by: Jernej Skrabec <jernej.skrabec@siol.net>
+(cherry picked from commit 66196296671fcb6454ab2260ab0b0a600fce6214)
+---
+ libavcodec/vc1.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/libavcodec/vc1.c b/libavcodec/vc1.c
+index 33ff7af358..fc7b45d663 100644
+--- a/libavcodec/vc1.c
++++ b/libavcodec/vc1.c
+@@ -102,6 +102,13 @@ static int bitplane_decoding(uint8_t* data, int *raw_flag, VC1Context *v)
+ 
+     width  = v->s.mb_width;
+     height = v->s.mb_height >> v->field_mode;
++    /* RESPIC: Simple/Main picture coded at half width and/or height */
++    if (v->profile < PROFILE_ADVANCED && v->multires) {
++        if (v->respic & 1)
++            width  = (v->s.width  / 2 + 15) >> 4;
++        if (v->respic & 2)
++            height = (v->s.height / 2 + 15) >> 4;
++    }
+     stride = v->s.mb_stride;
+     invert = get_bits1(gb);
+     imode = get_vlc2(gb, ff_vc1_imode_vlc, VC1_IMODE_VLC_BITS, 1);

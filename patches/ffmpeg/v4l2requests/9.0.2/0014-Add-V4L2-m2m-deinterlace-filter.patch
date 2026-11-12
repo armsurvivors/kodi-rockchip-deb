@@ -1,7 +1,7 @@
-From 6f0edd6e16fef1dda8f7053dbf3be7c5664cea57 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jernej Skrabec <jernej.skrabec@siol.net>
 Date: Tue, 3 Dec 2019 21:01:18 +0100
-Subject: [PATCH 14/22] Add V4L2 m2m deinterlace filter
+Subject: [PATCH 14/44] Add V4L2 m2m deinterlace filter
 
 Signed-off-by: Alex Bee <knaerzche@gmail.com>
 ---
@@ -1052,6 +1052,3 @@ index 0000000000..a498397525
 +    FILTER_INPUTS(deint_v4l2m2m_inputs),
 +    FILTER_OUTPUTS(deint_v4l2m2m_outputs),
 +};
--- 
-2.55.0
-

@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: CroqueMr <82093548+CroqueMr@users.noreply.github.com>
+Date: Tue, 20 Oct 2026 21:24:50 +0200
+Subject: [PATCH 31/44] avformat/mpegts: treat a descriptor-declared DV profile
+ 7 EL in private PES as HEVC
+
+Recognize a Dolby Vision profile 7 enhancement layer stream that is
+carried as private PES data but declared by its DOVI descriptor, so it
+is parsed as HEVC and can be paired with its base layer.
+
+From libreelec-x86-DV R1.0.0-Beta5 (15a14e0b21), CB1/patches/ffmpeg/ffmpeg-9900-04-ts-dovi-layer.patch
+https://github.com/CroqueMr/libreelec-x86-DV
+---
+ libavformat/mpegts.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/libavformat/mpegts.c b/libavformat/mpegts.c
+index cde8f46c5b..3e7aae02f9 100644
+--- a/libavformat/mpegts.c
++++ b/libavformat/mpegts.c
+@@ -2507,6 +2507,16 @@ int ff_parse_mpeg2_descriptor(AVFormatContext *fc, AVStream *st, int stream_type
+                 struct StreamGroup *stg;
+                 int gi;
+ 
++                /* Profile 7 EL is HEVC even when carried as private PES. */
++                if (stream_type == STREAM_TYPE_PRIVATE_DATA &&
++                    st->codecpar->codec_id == AV_CODEC_ID_BIN_DATA) {
++                    st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
++                    st->codecpar->codec_id = AV_CODEC_ID_HEVC;
++                    sti->need_context_update = 1;
++                    sti->need_parsing = AVSTREAM_PARSE_FULL;
++                    sti->request_probe = 0;
++                }
++
+                 if (!p)
+                     break;
+ 

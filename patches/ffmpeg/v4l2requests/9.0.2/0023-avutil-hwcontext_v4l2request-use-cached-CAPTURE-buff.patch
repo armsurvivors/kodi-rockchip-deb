@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Christian Hewitt <christianshewitt@gmail.com>
+Date: Fri, 2 Oct 2026 12:59:08 +0000
+Subject: [PATCH 23/44] avutil/hwcontext_v4l2request: use cached CAPTURE
+ buffers when supported
+
+Mapping decoded frames for CPU access, e.g. hwdownload for a software
+deinterlacer, reads from uncached memory and caps 1080i MPEG-2 on
+Amlogic GXM at 35 fps.
+
+When the CAPTURE queue supports cache hints, allocate the buffers with
+V4L2_MEMORY_FLAG_NON_COHERENT and queue them with
+V4L2_BUF_FLAG_NO_CACHE_CLEAN and V4L2_BUF_FLAG_NO_CACHE_INVALIDATE.
+The decoder never needs the CPU caches, and the existing
+DMA_BUF_IOCTL_SYNC around the hwmap does the maintenance only for
+frames the CPU reads, so frames that only go to the display get none.
+
+The kernel must sync non-coherent vb2 dma-contig buffers in the dma-buf
+CPU access callbacks, or mapped frames show stale cache lines.
+
+On VIM2 (GXM):
+
+  1080i MPEG-2 decode + hwdownload: 35 fps -> 90 fps
+  576i MPEG-2 decode + hwdownload:  165 fps -> 342 fps
+  decode-only 1080i/576i/4K HEVC:   unchanged
+  300-frame checksums:              identical
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+---
+ libavcodec/v4l2_request.c         | 5 +++++
+ libavutil/hwcontext_v4l2request.c | 4 ++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/libavcodec/v4l2_request.c b/libavcodec/v4l2_request.c
+index 81ad4d48f1..4ac56d78f5 100644
+--- a/libavcodec/v4l2_request.c
++++ b/libavcodec/v4l2_request.c
+@@ -162,6 +162,11 @@ static int v4l2_request_queue_capture_buffer(V4L2RequestContext *ctx,
+         .type = ctx->fctxi->capture.format.type,
+         .memory = V4L2_MEMORY_MMAP,
+     };
++
++    if (ctx->fctxi->capture.capabilities & V4L2_BUF_CAP_SUPPORTS_MMAP_CACHE_HINTS)
++        buffer.flags = V4L2_BUF_FLAG_NO_CACHE_CLEAN |
++                       V4L2_BUF_FLAG_NO_CACHE_INVALIDATE;
++
+     return v4l2_request_queue_buffer(ctx, &buffer);
+ }
+ 
+diff --git a/libavutil/hwcontext_v4l2request.c b/libavutil/hwcontext_v4l2request.c
+index 067316ccaf..b3a0998314 100644
+--- a/libavutil/hwcontext_v4l2request.c
++++ b/libavutil/hwcontext_v4l2request.c
+@@ -855,6 +855,10 @@ static AVBufferRef *v4l2request_v4l2_buffer_alloc(AVHWFramesContext *hwfc,
+     buffer = (struct v4l2_buffer *)ref->data;
+     buffer->type = format->type;
+ 
++    if (format == &fctxi->capture.format &&
++        (fctxi->capture.capabilities & V4L2_BUF_CAP_SUPPORTS_MMAP_CACHE_HINTS))
++        buffers.flags = V4L2_MEMORY_FLAG_NON_COHERENT;
++
+     if (num_planes) {
+         buffer->length = num_planes;
+         buffer->m.planes = (struct v4l2_plane *)(buffer + 1);

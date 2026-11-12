@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Christian Hewitt <christianshewitt@gmail.com>
+Date: Wed, 7 Oct 2026 13:55:43 +0000
+Subject: [PATCH 26/44] avfilter/deinterlace_v4l2m2m: scale output timestamps
+ to the field rate
+
+config_props halves the output time base to carry the doubled frame rate,
+but the output frames kept the input timestamps. Every timestamp was
+read at half its value, so 25 fps interlaced input played out as 100 fps
+instead of 50 fps.
+
+Give the second field twice the input timestamp and the first field the
+sum of the previous and current timestamps, the midpoint in the output
+time base, and set the frame time base to match.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+---
+ libavfilter/vf_deinterlace_v4l2m2m.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/libavfilter/vf_deinterlace_v4l2m2m.c b/libavfilter/vf_deinterlace_v4l2m2m.c
+index a25bd55eb8..192d6f9640 100644
+--- a/libavfilter/vf_deinterlace_v4l2m2m.c
++++ b/libavfilter/vf_deinterlace_v4l2m2m.c
+@@ -814,11 +814,15 @@ static int deint_v4l2m2m_dequeue(AVFilterContext *avctx, AVFrame *input_frame)
+ 
+     if (ctx->prev_in_frame && ctx->prev_in_frame->pts != AV_NOPTS_VALUE
+        && input_frame->pts != AV_NOPTS_VALUE) {
+-      first_pts = (ctx->prev_in_frame->pts + input_frame->pts) / 2;
++      first_pts = ctx->prev_in_frame->pts + input_frame->pts;
+       av_log(priv, AV_LOG_DEBUG, "calculated first pts %"PRId64"\n", first_pts);
+     }
+ 
+     output_frame_1->pts = first_pts;
++    output_frame_1->time_base = outlink->time_base;
++    if (input_frame->pts != AV_NOPTS_VALUE)
++        output_frame_2->pts = input_frame->pts * 2;
++    output_frame_2->time_base = outlink->time_base;
+ 
+     err = ff_filter_frame(outlink, output_frame_1);
+     if (err < 0) {

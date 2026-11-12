@@ -1,7 +1,7 @@
-From 7c968f098178daf30b9955ea8036b9ce6139a04d Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
 Date: Tue, 6 Aug 2024 09:06:00 +0000
-Subject: [PATCH 01/22] avutil/hwcontext: Add hwdevice type for V4L2 Request
+Subject: [PATCH 01/44] avutil/hwcontext: Add hwdevice type for V4L2 Request
  API
 
 Add a hwdevice type for use with V4L2 Request API stateless decoding.
@@ -921,6 +921,3 @@ index 0000000000..20436b2b2d
 +};
 +
 +#endif /* AVUTIL_HWCONTEXT_V4L2REQUEST_INTERNAL_H */
--- 
-2.55.0
-

@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: CroqueMr <82093548+CroqueMr@users.noreply.github.com>
+Date: Tue, 20 Oct 2026 14:59:44 +0000
+Subject: [PATCH 28/44] avcodec/dovi_rpudec: retain original extension block
+ bytes
+
+Bounds-check each RPU extension block before reading it and keep up to
+32 of its original bytes in the AVDOVIDmData trailer, so CB1 can
+reproduce metadata blocks exactly as the source carried them.
+
+From libreelec-x86-DV R1.0.0-Beta4 (f0f947a), CB1/patches/ffmpeg/ffmpeg-9900-00-libavcodec__dovi_rpudec.c.patch
+https://github.com/CroqueMr/libreelec-x86-DV
+---
+ libavcodec/dovi_rpudec.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/libavcodec/dovi_rpudec.c b/libavcodec/dovi_rpudec.c
+index 00005049be..f7fa9e128f 100644
+--- a/libavcodec/dovi_rpudec.c
++++ b/libavcodec/dovi_rpudec.c
+@@ -319,6 +319,17 @@ static int parse_ext_blocks(DOVIContext *s, GetBitContext *gb, int ver,
+ 
+         memset(dm, 0, sizeof(*dm));
+         dm->level = level;
++        /* Validate before copying from the bitreader, including non-byte-aligned
++         * block starts. Static/compressed state inherits this trailer naturally. */
++        if (ext_block_length < 0 || ext_block_length > get_bits_left(gb) / 8)
++            return AVERROR_INVALIDDATA;
++        dm->dvbridge_original_length = ext_block_length;
++        if (ext_block_length <= sizeof(dm->dvbridge_original_bytes)) {
++            GetBitContext raw = *gb;
++            for (int j = 0; j < ext_block_length; j++)
++                dm->dvbridge_original_bytes[j] = get_bits(&raw, 8);
++            dm->dvbridge_raw_magic = 0x41424456;
++        }
+         switch (ver) {
+         case 1: ret = parse_ext_v1(s, gb, dm); break;
+         case 2: ret = parse_ext_v2(s, gb, dm, ext_block_length); break;

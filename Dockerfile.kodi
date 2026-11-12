@@ -41,6 +41,12 @@ if [ "${ID}" = "debian" ] && [ "${VERSION_CODENAME}" = "trixie" ]; then
 		Pin: release n=trixie-backports
 		Pin-Priority: 990
 	BACKPORTS_PIN
+	# Mesa too: panfrost needs >= 25.2 to import MediaTek MM21 (16L32 tiled) with the right strides; trixie has 25.0.
+	cat > /etc/apt/preferences.d/mesa-backports <<- MESA_PIN
+		Package: src:mesa
+		Pin: release n=trixie-backports
+		Pin-Priority: 990
+	MESA_PIN
 fi
 
 apt-get -y update
@@ -136,7 +142,7 @@ ENV FLAVOR="v4l2requests" \
     FFMPEG_BRANCH="${FFMPEG_BRANCH:-n9.0.2}" \
     FFMPEG_ID="${FFMPEG_ID:-902v4l2requests}" \
     FFMPEG_DECODERS="h264 hevc vp9 av1 libdav1d h264_v4l2m2m hevc_v4l2m2m vp9_v4l2m2m" \
-    KODI_PATCH_SETS="common drmprime-filter"
+    KODI_PATCH_SETS="common drmprime-filter mediatek"
 
 # Lets ensure the libc/linux headers are recent enough for the stateless decoders we need, otherwise bail out fast.
 # Every check runs (so the log shows the full picture); the build aborts afterwards if any of them failed.
@@ -314,11 +320,29 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,t
 ls -laR  /etc/apt/apt.conf.d; for ja in /etc/apt/apt.conf.d/*; do echo "APT CONF.D ITEM: $ja"; cat "$ja"; done
 rm -rfv /etc/apt/apt.conf.d/docker-clean /etc/apt/apt.conf.d/docker-gzip-indexes
 
+# Runtime Mesa from trixie-backports, same as the build (see the base stage).
+. /etc/os-release
+if [ "${ID}" = "debian" ] && [ "${VERSION_CODENAME}" = "trixie" ]; then
+	cat > /etc/apt/sources.list.d/trixie-backports.sources <<- BACKPORTS_SOURCES
+		Types: deb
+		URIs: http://deb.debian.org/debian
+		Suites: trixie-backports
+		Components: main
+		Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+	BACKPORTS_SOURCES
+	cat > /etc/apt/preferences.d/mesa-backports <<- MESA_PIN
+		Package: src:mesa
+		Pin: release n=trixie-backports
+		Pin-Priority: 990
+	MESA_PIN
+fi
+
 du -h /var/cache/apt
 du -h /var/lib/apt
 apt-get -y update
 apt-get -y dist-upgrade
-apt-get -y install /debs/*.deb pulseaudio-utils ir-keytable
+apt-get -y install /debs/*.deb pulseaudio-utils ir-keytable libegl-mesa0 libgbm1 mesa-libgallium
+dpkg -l | grep -E 'mesa|libgbm' || true
 INSTALL_DEBS
 
 # Final stage is just the output deb

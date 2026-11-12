@@ -1,7 +1,7 @@
-From b9472dbe27038baeac9ede62dce8981b817a199a Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christian Hewitt <christianshewitt@gmail.com>
 Date: Sun, 27 Sep 2026 12:27:50 +0000
-Subject: [PATCH 21/22] avfilter/deinterlace_v4l2m2m: support NV12M input
+Subject: [PATCH 21/44] avfilter/deinterlace_v4l2m2m: support NV12M input
  frames
 
 The filter assumes a single DRM object and derives the height from the
@@ -70,6 +70,3 @@ index 56263379ce..a25bd55eb8 100644
          ctx->drm_in_format = drm_desc->layers->format;
          ctx->drm_out_format = drm_desc->layers->format;
  
--- 
-2.55.0
-

@@ -1,7 +1,7 @@
-From ec93992527c0ea3d1e7340c2266f880fd9167f35 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christian Hewitt <christianshewitt@gmail.com>
 Date: Mon, 28 Sep 2026 07:05:35 +0000
-Subject: [PATCH 22/22] avutil/hwcontext_v4l2request: Add support for Amlogic
+Subject: [PATCH 22/44] avutil/hwcontext_v4l2request: Add support for Amlogic
  AM21B pix fmts
 
 Map the Amlogic basic-layout compressed capture format to the DRM
@@ -73,6 +73,3 @@ index 99c5bfcfc0..067316ccaf 100644
  #if defined(V4L2_PIX_FMT_NV12M)
      // NV12M holds each plane in a separate buffer, not at an offset into one
      if (pixelformat == V4L2_PIX_FMT_NV12M) {
--- 
-2.55.0
-

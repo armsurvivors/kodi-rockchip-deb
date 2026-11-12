@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: CroqueMr <82093548+CroqueMr@users.noreply.github.com>
+Date: Tue, 20 Oct 2026 14:59:44 +0000
+Subject: [PATCH 27/44] avutil/dovi_meta: add a trailer for original RPU
+ extension block bytes
+
+Add fields to AVDOVIDmData that let a decoder retain the original,
+bit-packed bytes of a Dolby Vision RPU extension block alongside the
+parsed values, for CB1's native Dolby Vision bridge. A magic value marks
+the trailer as present even when the block value is zero.
+
+From libreelec-x86-DV R1.0.0-Beta4 (f0f947a), CB1/patches/ffmpeg/ffmpeg-9900-02-libavutil__dovi_meta.h.patch
+https://github.com/CroqueMr/libreelec-x86-DV
+---
+ libavutil/dovi_meta.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/libavutil/dovi_meta.h b/libavutil/dovi_meta.h
+index c102bf384f..598d2440f1 100644
+--- a/libavutil/dovi_meta.h
++++ b/libavutil/dovi_meta.h
+@@ -332,6 +332,11 @@ typedef struct AVDOVIDmData {
+         AVDOVIDmLevel254 l254; /* static */
+         AVDOVIDmLevel255 l255; /* static */
+     };
++    /* Dvbridge isolated-lab trailer. Preserve presence even when value is zero.
++     * Original RPU block bytes are bit-packed, NOT HDMI payload bytes. */
++    uint32_t dvbridge_raw_magic;
++    uint32_t dvbridge_original_length;
++    uint8_t dvbridge_original_bytes[32];
+ } AVDOVIDmData;
+ 
+ /**

@@ -1,7 +1,7 @@
-From 83811ad27c7f961d06e925d868c7d12236895d90 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christian Hewitt <christianshewitt@gmail.com>
 Date: Fri, 20 Feb 2026 01:29:00 +0000
-Subject: [PATCH 15/22] avfilter/deinterlace_v4l2m2m: Set bytesused when
+Subject: [PATCH 15/44] avfilter/deinterlace_v4l2m2m: Set bytesused when
  enqueuing output buffers
 
 Set bytesused to the buffer length when enqueuing output buffers to
@@ -37,6 +37,3 @@ index a498397525..ef015bb764 100644
  
      return deint_v4l2m2m_enqueue_buffer(buf);
  }
--- 
-2.55.0
-

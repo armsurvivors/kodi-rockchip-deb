@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: CroqueMr <82093548+CroqueMr@users.noreply.github.com>
+Date: Tue, 20 Oct 2026 14:59:44 +0000
+Subject: [PATCH 29/44] avformat/isom_tags: map the dav1 sample entry to AV1
+
+Recognise 'dav1', the ISOBMFF sample entry for AV1-based Dolby Vision,
+as AV1.
+
+From libreelec-x86-DV R1.0.0-Beta4 (f0f947a), CB1/patches/ffmpeg/ffmpeg-9900-01-libavformat__isom_tags.c.patch
+https://github.com/CroqueMr/libreelec-x86-DV
+---
+ libavformat/isom_tags.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libavformat/isom_tags.c b/libavformat/isom_tags.c
+index c0c239d393..e1789cf63f 100644
+--- a/libavformat/isom_tags.c
++++ b/libavformat/isom_tags.c
+@@ -155,6 +155,7 @@ const AVCodecTag ff_codec_movvideo_tags[] = {
+     { AV_CODEC_ID_VP8,  MKTAG('v', 'p', '0', '8') }, /* VP8 */
+     { AV_CODEC_ID_VP9,  MKTAG('v', 'p', '0', '9') }, /* VP9 */
+     { AV_CODEC_ID_AV1,  MKTAG('a', 'v', '0', '1') }, /* AV1 */
++    { AV_CODEC_ID_AV1,  MKTAG('d', 'a', 'v', '1') }, /* AV1-based Dolby Vision */
+ 
+     { AV_CODEC_ID_MPEG1VIDEO, MKTAG('m', '1', 'v', ' ') },
+     { AV_CODEC_ID_MPEG1VIDEO, MKTAG('m', '1', 'v', '1') }, /* Apple MPEG-1 Camcorder */

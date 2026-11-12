@@ -1,7 +1,7 @@
-From 21d4d7f42c83cc87915b4435ea20e3655d84d464 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
 Date: Tue, 6 Aug 2024 09:06:03 +0000
-Subject: [PATCH 04/22] avcodec/v4l2request: Add common decode support for
+Subject: [PATCH 04/44] avcodec/v4l2request: Add common decode support for
  hwaccels
 
 Add common support for decoding using the V4L2 Request API.
@@ -702,6 +702,3 @@ index d09bbf7344..53759f20bb 100644
  int ff_v4l2_request_frame_params(AVCodecContext *avctx,
                                   AVBufferRef *hw_frames_ctx,
                                   uint32_t pixelformat,
--- 
-2.55.0
-

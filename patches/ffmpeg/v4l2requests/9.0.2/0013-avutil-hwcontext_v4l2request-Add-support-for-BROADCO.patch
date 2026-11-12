@@ -1,7 +1,7 @@
-From d59b6cb6f9f32da1ac942929b0edf14be23243d8 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
 Date: Sun, 14 Dec 2025 01:14:17 +0000
-Subject: [PATCH 13/22] avutil/hwcontext_v4l2request: Add support for
+Subject: [PATCH 13/44] avutil/hwcontext_v4l2request: Add support for
  BROADCOM_SAND128 pix fmts
 
 Add support for NV12_COL128 and NV12_10_COL128 used by downstream
@@ -55,6 +55,3 @@ index 59abb94b14..b6633d9081 100644
      return 0;
  }
  
--- 
-2.55.0
-

@@ -1,7 +1,7 @@
-From 064b026b90d49fd1ca3648ea219f11699b2fcc4a Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christian Hewitt <christianshewitt@gmail.com>
 Date: Tue, 22 Sep 2026 06:03:04 +0000
-Subject: [PATCH 19/22] avutil/hwcontext_v4l2request: Add support for Amlogic
+Subject: [PATCH 19/44] avutil/hwcontext_v4l2request: Add support for Amlogic
  NV12M pix fmts
 
 Add support for NV12M used by the downstream Amlogic decoder.
@@ -164,6 +164,3 @@ index b6633d9081..0878c3fc38 100644
      } else {
          format.fmt.pix.width = hwfc->width;
          format.fmt.pix.height = hwfc->height;
--- 
-2.55.0
-

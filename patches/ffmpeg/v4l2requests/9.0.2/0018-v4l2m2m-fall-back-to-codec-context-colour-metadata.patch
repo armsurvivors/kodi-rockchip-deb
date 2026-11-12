@@ -1,7 +1,7 @@
-From 29a7002813577c41b18fa3ba8e6ce1034c295c6d Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Gus Bourg <gus@bourg.net>
 Date: Wed, 2 Sep 2026 17:30:00 -0700
-Subject: [PATCH 18/22] v4l2m2m: fall back to codec-context colour metadata
+Subject: [PATCH 18/44] v4l2m2m: fall back to codec-context colour metadata
 
 Signed-off-by: Gus Bourg <gus@bourg.net>
 ---
@@ -64,6 +64,3 @@ index f96c26771b..7e3c7a4efc 100644
      frame->pts = v4l2_get_pts(avbuf);
      frame->pkt_dts = AV_NOPTS_VALUE;
      v4l2_get_interlacing(frame, avbuf);
--- 
-2.55.0
-

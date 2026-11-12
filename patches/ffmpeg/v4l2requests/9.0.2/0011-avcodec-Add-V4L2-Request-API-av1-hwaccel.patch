@@ -1,7 +1,7 @@
-From 03c216bc4e53aaed1977397a16ab9cbcb4d81167 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
 Date: Sat, 6 Jul 2024 08:41:30 +0000
-Subject: [PATCH 11/22] avcodec: Add V4L2 Request API av1 hwaccel
+Subject: [PATCH 11/44] avcodec: Add V4L2 Request API av1 hwaccel
 
 Add a V4L2 Request API hwaccel for AV1.
 
@@ -747,6 +747,3 @@ index 0000000000..4eabdbf31b
 +    .frame_params       = v4l2_request_av1_frame_params,
 +    .caps_internal      = HWACCEL_CAP_ASYNC_SAFE,
 +};
--- 
-2.55.0
-

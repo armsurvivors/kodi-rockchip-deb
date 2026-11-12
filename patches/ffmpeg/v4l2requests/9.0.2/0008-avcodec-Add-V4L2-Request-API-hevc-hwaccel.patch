@@ -1,7 +1,7 @@
-From 49d9d2526f45573b5abc033c13d9357d200a30dc Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jernej Skrabec <jernej.skrabec@gmail.com>
 Date: Tue, 6 Aug 2024 09:06:07 +0000
-Subject: [PATCH 08/22] avcodec: Add V4L2 Request API hevc hwaccel
+Subject: [PATCH 08/44] avcodec: Add V4L2 Request API hevc hwaccel
 
 Add a V4L2 Request API hwaccel for HEVC, supporting both slice and
 frame decoding modes.
@@ -883,6 +883,3 @@ index 0000000000..26cba2c75f
 +    .frame_params       = v4l2_request_hevc_frame_params,
 +    .caps_internal      = HWACCEL_CAP_ASYNC_SAFE,
 +};
--- 
-2.55.0
-

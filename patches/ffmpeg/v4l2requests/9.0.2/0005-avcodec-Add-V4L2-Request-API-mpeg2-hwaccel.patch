@@ -1,7 +1,7 @@
-From eeadd6d847cc3ab6f36cf5d50377e7586a272995 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
 Date: Tue, 6 Aug 2024 09:06:04 +0000
-Subject: [PATCH 05/22] avcodec: Add V4L2 Request API mpeg2 hwaccel
+Subject: [PATCH 05/44] avcodec: Add V4L2 Request API mpeg2 hwaccel
 
 Add a V4L2 Request API hwaccel for MPEG2.
 
@@ -304,6 +304,3 @@ index 0000000000..5d89b7168e
 +    .frame_params       = v4l2_request_mpeg2_frame_params,
 +    .caps_internal      = HWACCEL_CAP_ASYNC_SAFE,
 +};
--- 
-2.55.0
-
