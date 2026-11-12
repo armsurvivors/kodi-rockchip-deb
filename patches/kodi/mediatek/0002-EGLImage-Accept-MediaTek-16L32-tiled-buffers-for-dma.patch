@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Mon, 24 Aug 2026 16:56:15 +0200
-Subject: [PATCH 2/6] EGLImage: Accept MediaTek 16L32 tiled buffers for dma-buf
+Subject: [PATCH 2/8] EGLImage: Accept MediaTek 16L32 tiled buffers for dma-buf
  import
 
 Mesa's panfrost driver imports DRM_FORMAT_MOD_MTK_16L_32S_TILE buffers

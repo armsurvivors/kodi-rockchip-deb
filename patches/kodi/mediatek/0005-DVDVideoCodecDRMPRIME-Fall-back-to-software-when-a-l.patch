@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Mon, 24 Aug 2026 22:07:19 +0200
-Subject: [PATCH 5/6] DVDVideoCodecDRMPRIME: Fall back to software when a
+Subject: [PATCH 5/8] DVDVideoCodecDRMPRIME: Fall back to software when a
  layout cannot be converted
 
 MediaTek 10-bit output is MT2110, which nothing on the board can consume:
