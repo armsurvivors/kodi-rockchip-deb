@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Mon, 24 Aug 2026 21:29:44 +0200
-Subject: [PATCH 3/8] DRMPRIMEEGL: Re-import MediaTek tiled buffers instead of
+Subject: [PATCH 3/9] DRMPRIMEEGL: Re-import MediaTek tiled buffers instead of
  caching them
 
 Mesa does not import MTK 16L32 tiled buffers as a view of the dma-buf.
