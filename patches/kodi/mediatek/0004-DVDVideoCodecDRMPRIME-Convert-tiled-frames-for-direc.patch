@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Mon, 24 Aug 2026 22:01:35 +0200
-Subject: [PATCH 4/9] DVDVideoCodecDRMPRIME: Convert tiled frames for direct
+Subject: [PATCH 04/10] DVDVideoCodecDRMPRIME: Convert tiled frames for direct
  scanout
 
 The MediaTek stateless decoder produces MM21, a tiled layout that the

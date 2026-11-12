@@ -1,8 +1,8 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Thu, 12 Nov 2026 14:50:47 +0100
-Subject: [PATCH 6/9] RendererDRMPRIMEGLES: Use the OES path for MediaTek tiled
- buffers
+Subject: [PATCH 06/10] RendererDRMPRIMEGLES: Use the OES path for MediaTek
+ tiled buffers
 
 The limited-range YUV path imports each plane on its own, as R8 and
 GR88 images carrying the buffer's modifier. Mesa only detiles MTK

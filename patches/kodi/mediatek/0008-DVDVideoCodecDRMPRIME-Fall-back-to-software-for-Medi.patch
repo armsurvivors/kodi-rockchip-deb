@@ -1,8 +1,8 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Thu, 12 Nov 2026 20:48:40 +0100
-Subject: [PATCH 8/9] DVDVideoCodecDRMPRIME: Fall back to software for MediaTek
- 10-bit frames
+Subject: [PATCH 08/10] DVDVideoCodecDRMPRIME: Fall back to software for
+ MediaTek 10-bit frames
 
 Neither the GPU nor MDP3 can read the MediaTek 10-bit tiled layouts, so
 reopen in software as soon as one is decoded, on both render paths. Do
