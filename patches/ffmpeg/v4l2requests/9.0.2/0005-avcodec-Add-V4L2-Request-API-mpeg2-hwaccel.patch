@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
 Date: Tue, 6 Aug 2024 09:06:04 +0000
-Subject: [PATCH 05/47] avcodec: Add V4L2 Request API mpeg2 hwaccel
+Subject: [PATCH 05/48] avcodec: Add V4L2 Request API mpeg2 hwaccel
 
 Add a V4L2 Request API hwaccel for MPEG2.
 

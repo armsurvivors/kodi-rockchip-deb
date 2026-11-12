@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Thu, 12 Nov 2026 14:48:28 +0100
-Subject: [PATCH 44/47] avutil/hwcontext_v4l2request: Detile MediaTek MM21 on
+Subject: [PATCH 44/48] avutil/hwcontext_v4l2request: Detile MediaTek MM21 on
  hwdownload
 
 MM21 frames could not be downloaded at all: the sw_format is a

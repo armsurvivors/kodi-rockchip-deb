@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: John Cox <jc@kynesim.co.uk>
 Date: Tue, 21 May 2024 17:06:29 +0100
-Subject: [PATCH 25/47] vf_bwdif: Add ability to deinterlace NV12
+Subject: [PATCH 25/48] vf_bwdif: Add ability to deinterlace NV12
 
 (cherry picked from commit 76c0e60faaa6e7fa9dad392bd7e425a7d275e78c)
 ---

@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Boris Brezillon <boris.brezillon@collabora.com>
 Date: Tue, 6 Aug 2024 09:06:05 +0000
-Subject: [PATCH 06/47] avcodec/h264dec: add ref_pic_marking and pic_order_cnt
+Subject: [PATCH 06/48] avcodec/h264dec: add ref_pic_marking and pic_order_cnt
  bit_size to slice context
 
 The V4L2_CID_STATELESS_H264_DECODE_PARAMS control require following:

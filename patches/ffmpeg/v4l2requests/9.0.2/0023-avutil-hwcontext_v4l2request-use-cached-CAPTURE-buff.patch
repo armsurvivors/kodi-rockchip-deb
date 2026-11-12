@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christian Hewitt <christianshewitt@gmail.com>
 Date: Fri, 2 Oct 2026 12:59:08 +0000
-Subject: [PATCH 23/47] avutil/hwcontext_v4l2request: use cached CAPTURE
+Subject: [PATCH 23/48] avutil/hwcontext_v4l2request: use cached CAPTURE
  buffers when supported
 
 Mapping decoded frames for CPU access, e.g. hwdownload for a software
