@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jernej Skrabec <jernej.skrabec@siol.net>
 Date: Thu, 8 Oct 2026 18:39:59 +0200
-Subject: [PATCH 37/46] avcodec/vc1: read RESPIC only in I and P pictures
+Subject: [PATCH 37/47] avcodec/vc1: read RESPIC only in I and P pictures
 
 RESPIC is present in Simple and Main profile I and P pictures only
 (SMPTE 421M 7.1.1.23, and the SMPTE reference decoder); B and BI

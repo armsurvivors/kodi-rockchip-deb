@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christian Hewitt <christianshewitt@gmail.com>
 Date: Sun, 27 Sep 2026 12:27:50 +0000
-Subject: [PATCH 21/46] avfilter/deinterlace_v4l2m2m: support NV12M input
+Subject: [PATCH 21/47] avfilter/deinterlace_v4l2m2m: support NV12M input
  frames
 
 The filter assumes a single DRM object and derives the height from the

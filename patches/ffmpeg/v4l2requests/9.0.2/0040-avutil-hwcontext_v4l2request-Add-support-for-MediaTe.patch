@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Mon, 24 Aug 2026 16:23:17 +0200
-Subject: [PATCH 40/46] avutil/hwcontext_v4l2request: Add support for MediaTek
+Subject: [PATCH 40/47] avutil/hwcontext_v4l2request: Add support for MediaTek
  MM21 pix fmts
 
 Add support for MM21, MT2110T and MT2110R used by the MediaTek stateless

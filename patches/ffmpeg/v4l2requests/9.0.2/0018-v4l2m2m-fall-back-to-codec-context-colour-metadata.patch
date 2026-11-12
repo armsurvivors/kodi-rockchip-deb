@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Gus Bourg <gus@bourg.net>
 Date: Wed, 2 Sep 2026 17:30:00 -0700
-Subject: [PATCH 18/46] v4l2m2m: fall back to codec-context colour metadata
+Subject: [PATCH 18/47] v4l2m2m: fall back to codec-context colour metadata
 
 Signed-off-by: Gus Bourg <gus@bourg.net>
 ---

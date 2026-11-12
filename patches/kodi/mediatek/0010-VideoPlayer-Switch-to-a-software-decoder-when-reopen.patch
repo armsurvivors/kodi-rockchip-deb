@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Thu, 12 Nov 2026 22:20:59 +0100
-Subject: [PATCH 10/10] VideoPlayer: Switch to a software decoder when
+Subject: [PATCH 10/11] VideoPlayer: Switch to a software decoder when
  reopening fails
 
 A hardware decoder can ask to be reopened in software (VC_REOPEN), but

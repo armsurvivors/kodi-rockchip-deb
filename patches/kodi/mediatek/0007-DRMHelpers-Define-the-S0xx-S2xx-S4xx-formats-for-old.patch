@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Thu, 12 Nov 2026 20:48:39 +0100
-Subject: [PATCH 07/10] DRMHelpers: Define the S0xx/S2xx/S4xx formats for older
+Subject: [PATCH 07/11] DRMHelpers: Define the S0xx/S2xx/S4xx formats for older
  libdrm
 
 The 10/12/16-bit software paths are guarded on these fourccs, which

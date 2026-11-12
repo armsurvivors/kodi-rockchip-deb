@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Gus Bourg <gus@bourg.net>
 Date: Tue, 22 Sep 2026 06:49:48 +0000
-Subject: [PATCH 20/46] avutil/hwcontext_v4l2request: Add support for Amlogic
+Subject: [PATCH 20/47] avutil/hwcontext_v4l2request: Add support for Amlogic
  AM21C pix fmts
 
 Add support for AM21C used as the native framebuffer compression format

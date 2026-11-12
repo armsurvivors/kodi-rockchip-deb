@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christian Hewitt <christianshewitt@gmail.com>
 Date: Wed, 7 Oct 2026 13:55:43 +0000
-Subject: [PATCH 26/46] avfilter/deinterlace_v4l2m2m: scale output timestamps
+Subject: [PATCH 26/47] avfilter/deinterlace_v4l2m2m: scale output timestamps
  to the field rate
 
 config_props halves the output time base to carry the doubled frame rate,

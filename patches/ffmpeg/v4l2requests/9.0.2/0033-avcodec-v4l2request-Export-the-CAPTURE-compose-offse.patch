@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christian Hewitt <christianshewitt@gmail.com>
 Date: Sun, 25 Oct 2026 18:34:15 +0000
-Subject: [PATCH 33/46] avcodec/v4l2request: Export the CAPTURE compose offset
+Subject: [PATCH 33/47] avcodec/v4l2request: Export the CAPTURE compose offset
  as cropping
 
 The Rockchip decoder writes H.264 and HEVC AFBC frames 4 lines below the

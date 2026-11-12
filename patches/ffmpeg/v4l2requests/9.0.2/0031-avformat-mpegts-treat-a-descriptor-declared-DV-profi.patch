@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: CroqueMr <82093548+CroqueMr@users.noreply.github.com>
 Date: Tue, 20 Oct 2026 21:24:50 +0200
-Subject: [PATCH 31/46] avformat/mpegts: treat a descriptor-declared DV profile
+Subject: [PATCH 31/47] avformat/mpegts: treat a descriptor-declared DV profile
  7 EL in private PES as HEVC
 
 Recognize a Dolby Vision profile 7 enhancement layer stream that is

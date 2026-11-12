@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jernej Skrabec <jernej.skrabec@gmail.com>
 Date: Wed, 7 Oct 2026 17:27:19 +0200
-Subject: [PATCH 36/46] avcodec/vc1_pred: pull back the co-located MV of
+Subject: [PATCH 36/47] avcodec/vc1_pred: pull back the co-located MV of
  Simple/Main direct mode
 
 For Simple and Main profile B pictures, the co-located motion vector of

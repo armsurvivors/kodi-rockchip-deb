@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: John Cox <jc@kynesim.co.uk>
 Date: Mon, 6 Feb 2023 19:23:16 +0000
-Subject: [PATCH 24/46] Initial buffersink alloc callback code
+Subject: [PATCH 24/47] Initial buffersink alloc callback code
 
 (cherry picked from commit dde8d3c8f3cc279b9b92ed4f10a2e3990f4aadeb)
 (cherry picked from commit c56a11db7c23f845789e29f6fec28079a3a96496)
