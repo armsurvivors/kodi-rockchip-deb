@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christian Hewitt <christianshewitt@gmail.com>
 Date: Sun, 25 Oct 2026 18:34:15 +0000
-Subject: [PATCH 32/48] avutil/hwcontext_v4l2request: Add support for Rockchip
+Subject: [PATCH 32/50] avutil/hwcontext_v4l2request: Add support for Rockchip
  AFBC pix fmts
 
 Map the Rockchip video decoder YUV 4:2:0 AFBC 16x16 capture formats to

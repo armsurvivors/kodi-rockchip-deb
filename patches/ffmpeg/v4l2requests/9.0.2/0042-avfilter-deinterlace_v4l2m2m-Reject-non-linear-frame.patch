@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Mon, 24 Aug 2026 21:58:55 +0200
-Subject: [PATCH 42/48] avfilter/deinterlace_v4l2m2m: Reject non-linear frame
+Subject: [PATCH 42/50] avfilter/deinterlace_v4l2m2m: Reject non-linear frame
  layouts
 
 The DRM frame descriptor is mapped to a V4L2 pixel format using only

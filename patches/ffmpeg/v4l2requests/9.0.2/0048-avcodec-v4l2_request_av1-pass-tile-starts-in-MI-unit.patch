@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Pardini <ricardo@pardini.net>
 Date: Thu, 12 Nov 2026 23:51:46 +0100
-Subject: [PATCH 48/48] avcodec/v4l2_request_av1: pass tile starts in MI units
+Subject: [PATCH 48/50] avcodec/v4l2_request_av1: pass tile starts in MI units
 
 V4L2's mi_col_starts/mi_row_starts are in 4x4 (MI) units, but the
 superblock starts from CBS were passed as-is, while the final entry was
