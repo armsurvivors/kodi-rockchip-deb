@@ -306,6 +306,37 @@ RUN file /pkg/*.deb && \
 WORKDIR /artifacts
 RUN cp -v /pkg/*.deb kodi-rockchip-gbm_${OS_ARCH}_kodi_${KODI_BRANCH}_ffmpeg_${FFMPEG_ID}_$(lsb_release -c -s).deb
 
+# ffmpeg-only .deb for non-Kodi users: ffmpeg/ffprobe and the /usr/local libs they link. It ships the same files as the
+# full package, hence the Conflicts.
+RUN <<-FFMPEG_DEB
+set -e
+d=/pkg/ffmpeg-only
+mkdir -p "${d}/DEBIAN" "${d}/usr/local/bin"
+cp -a /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "${d}/usr/local/bin/"
+for lib in $(ldd /usr/local/bin/ffmpeg /usr/local/bin/ffprobe | awk '$3 ~ /^\/usr\/local\// {print $3}' | sort -u); do
+	mkdir -p "${d}$(dirname "${lib}")"
+	cp -aL "${lib}" "${d}${lib}"
+done
+depends="$(cd /pkg/src && dpkg-shlibdeps -O -xkodi-rockchip-gbm -e"${d}/usr/local/bin/ffmpeg" -e"${d}/usr/local/bin/ffprobe" 2>/dev/null | sed -n 's/^shlibs:Depends=//p')"
+cat > "${d}/DEBIAN/control" <<- CONTROL
+	Package: kodi-rockchip-gbm-ffmpeg
+	Version: $(cd /pkg/src && dpkg-parsechangelog -S Version)
+	Architecture: ${OS_ARCH}
+	Maintainer: $(sed -n 's/^Maintainer: //p' /pkg/src/debian/control)
+	Section: video
+	Priority: optional
+	Depends: ${depends}
+	Conflicts: kodi-rockchip-gbm
+	Homepage: https://github.com/armsurvivors/kodi-rockchip-deb
+	Description: ffmpeg/ffprobe from kodi-rockchip-gbm (${FLAVOR}, ffmpeg ${FFMPEG_BRANCH}), without Kodi
+	 The same ffmpeg build as kodi-rockchip-gbm, in /usr/local, for use without Kodi.
+	 It conflicts with kodi-rockchip-gbm, which already contains it.
+CONTROL
+dpkg-deb --root-owner-group -Zxz -z1 --build "${d}" "kodi-rockchip-gbm-ffmpeg_${OS_ARCH}_ffmpeg_${FFMPEG_ID}_$(lsb_release -c -s).deb"
+dpkg-deb -I kodi-rockchip-gbm-ffmpeg_*.deb
+dpkg-deb -c kodi-rockchip-gbm-ffmpeg_*.deb
+FFMPEG_DEB
+
 # An intermediate stage, which is just the base image + the installed built package.
 # Who wouldn't want to run Kodi in a container?
 # Lets avoid a layer with the .deb as that is huge.
@@ -341,7 +372,7 @@ du -h /var/cache/apt
 du -h /var/lib/apt
 apt-get -y update
 apt-get -y dist-upgrade
-apt-get -y install /debs/*.deb pulseaudio-utils ir-keytable libegl-mesa0 libgbm1 mesa-libgallium
+apt-get -y install /debs/kodi-rockchip-gbm_*.deb pulseaudio-utils ir-keytable libegl-mesa0 libgbm1 mesa-libgallium
 dpkg -l | grep -E 'mesa|libgbm' || true
 INSTALL_DEBS
 
