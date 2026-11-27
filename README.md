@@ -169,6 +169,9 @@ Optional, from the same repo, for the bits the `.deb` would otherwise set up on 
 
 Run them the same way (`--privileged --network host --volume /dev:/dev --volume /run:/run`).
 
+They are rebuilt weekly. Each build is also tagged `<distro>-<YYYYMMDD-HHMM>` (eg. `trixie-20261201-0030`), so
+you can pin a specific build instead of following `-latest`.
+
 ### Docker Compose
 
 Ready-made stacks under [`deploy/docker-compose/`](deploy/docker-compose):

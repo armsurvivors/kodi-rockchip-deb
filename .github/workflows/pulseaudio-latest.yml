@@ -1,6 +1,9 @@
 name: pulseaudio-latest
 
 on:
+  schedule:
+    # Every tuesday at 00:40 UTC, ahead of kodi-latest; picks up distro updates (and new upstream releases)
+    - cron: '40 0 * * 2'
   workflow_dispatch: # https://github.com/armsurvivors/kodi-rockchip-deb/actions/workflows/pulseaudio-latest.yml
   #push:
   #  branches: [ main ]
@@ -17,7 +20,7 @@ jobs:
       - name: Prepare release ID
         id: prep
         run: |
-          echo ::set-output name=created::$(date -u +'%Y%m%d-%H%M')
+          echo "created=$(date -u +'%Y%m%d-%H%M')" >> "${GITHUB_OUTPUT}"
     outputs:
       created: ${{ steps.prep.outputs.created }} # refer to as ${{needs.prepare.outputs.created}}
 
@@ -59,7 +62,7 @@ jobs:
           load: false
           pull: true # bring in updated versions of preexisting GH images
           push: true
-          tags: ghcr.io/${{ github.repository }}/pulseaudio:${{ matrix.distro.id }}-latest
+          tags: ghcr.io/${{ github.repository }}/pulseaudio:${{ matrix.distro.id }}-latest,ghcr.io/${{ github.repository }}/pulseaudio:${{ matrix.distro.id }}-${{needs.prepare.outputs.created}}
           build-args: |
             PACKAGE_VERSION=${{needs.prepare.outputs.created}}
             BASE_IMAGE=${{ matrix.distro.image }}
