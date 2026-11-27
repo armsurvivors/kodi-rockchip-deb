@@ -1,6 +1,6 @@
 # Standalone Sendspin (formerly "Resonate") multi-room audio daemon, installed via uv.
 # Companion to the kodi-rockchip-gbm container: plays synchronized audio from a Sendspin server.
-# https://github.com/Sendspin/sendspin-cli -- installed as a uv tool from PyPI (package: sendspin).
+# https://github.com/Sendspin/sendspin-python-cli -- installed as a uv tool from PyPI (package: sendspin).
 # Independent from the main Dockerfile.
 ARG BASE_IMAGE="debian:trixie"
 FROM ${BASE_IMAGE} AS sendspin
@@ -21,11 +21,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 ENV UV_TOOL_BIN_DIR=/usr/local/bin \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python
+# Unpinned: always the latest sendspin release on PyPI at build time.
 RUN uv tool install --python 3.13 sendspin && \
+    uv tool list && \
+    which sendspin && \
     sendspin --version
-
-RUN sendspin --version
-RUN which sendspin
 
 # ARG invalidates the cache; surfaced as an OCI label for provenance.
 ARG PACKAGE_VERSION="dev"

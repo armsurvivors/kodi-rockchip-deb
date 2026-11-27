@@ -132,7 +132,7 @@ services:
     depends_on:
       pulse: { condition: service_healthy }
     entrypoint: ["sendspin"]
-    # Fixed --id keeps a stable Music Assistant player identity.
+    # Player identity (sendspin >= 8 has no --id) persists in the sendspin-config volume; keep it across recreates.
     command:
       - daemon
       - --audio-device
@@ -140,8 +140,6 @@ services:
       - --hardware-volume
       - "false"
       - --disable-mpris
-      - --id
-      - ${SENDSPIN_ID:?set SENDSPIN_ID in .env}
       - --manufacturer
       - ${SENDSPIN_MANUFACTURER:-Armsurvivors}
       - --product-name
