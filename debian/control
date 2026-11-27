@@ -2,7 +2,7 @@ Maintainer: Ricardo Pardini <ricardo@pardini.net>
 Source: kodi-rockchip-gbm
 Section: video
 Priority: optional
-Build-Depends: debhelper (>= 13.16~), lsb-release, bash (>= 4.0), dh-sequence-single-binary
+Build-Depends: debhelper (>= 13.16~), lsb-release, bash (>= 4.0)
 X-DH-Compat: 14
 Standards-Version: 3.9.6
 Homepage: https://github.com/armsurvivors/kodi-rockchip-deb
@@ -20,3 +20,14 @@ XB-Kodi-Rockchip-Build: @BUILD_INFO@
 XB-Kodi-Rockchip-Components: @COMPONENTS@
 Description: @SYNOPSIS@
 @LONG_DESCRIPTION@
+
+Package: ffmpeg-kodi-rockchip-gbm
+Architecture: @ARCH@
+Provides: ffmpeg-kodi-rockchip-gbm-@FLAVOR@
+Section: video
+Depends: ${misc:Depends}, ${shlibs:Depends}
+XB-Kodi-Rockchip-Flavor: @FLAVOR@
+XB-Kodi-Rockchip-Build: @BUILD_INFO@
+XB-Kodi-Rockchip-Components: @FFMPEG_COMPONENTS@
+Description: @FFMPEG_SYNOPSIS@
+@FFMPEG_LONG_DESCRIPTION@

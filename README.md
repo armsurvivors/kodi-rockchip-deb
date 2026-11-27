@@ -199,9 +199,11 @@ your flavor and your distro. Files are named
 
 Both flavors install as the same package (`kodi-rockchip-gbm`), so only one can be installed at a time.
 
-Each build also produces an ffmpeg-only package, `kodi-rockchip-gbm-ffmpeg_arm64_ffmpeg_<ffmpeg>_<distro>.deb`: the same
-`ffmpeg`/`ffprobe` (and the `/usr/local` libraries they need) without Kodi, for other users of the hardware decoders.
-It conflicts with `kodi-rockchip-gbm`, which already contains them.
+The `ffmpeg`/`ffprobe` command line tools are in a separate, optional package,
+`ffmpeg-kodi-rockchip-gbm_arm64_ffmpeg_<ffmpeg>_<distro>.deb`, from the same build. It works with or without Kodi
+installed (no dependency either way), for other users of the hardware decoders. It ships private copies of the
+libraries it needs in `/usr/local/lib/ffmpeg-kodi-rockchip-gbm`, so it shares no files with `kodi-rockchip-gbm`.
+Install it with `sudo apt install ./ffmpeg-kodi-rockchip-gbm_*.deb`. The container image includes both.
 
 - From an SSH or console connection (not in X11 or Wayland):
     - ✅ install with `sudo apt install ./kodi-rockchip-gbm_*.deb` -- it will pull in a ton of dependencies

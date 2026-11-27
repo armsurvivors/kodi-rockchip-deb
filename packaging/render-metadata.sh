@@ -24,12 +24,14 @@ FFMPEG_REV="$(rev ffmpeg)"
 case "${FLAVOR}" in
 	rkmpp)
 		SYNOPSIS="Kodi GBM/GLES for Rockchip vendor kernels (rkmpp + rkrga hw decoding)"
+		FFMPEG_SYNOPSIS="ffmpeg/ffprobe for Rockchip vendor kernels (rkmpp + rkrga hw decoding)"
 		FFMPEG_NAME="ffmpeg-rockchip"
 		EXTRA_COMPONENTS=", MPP @$(rev rkmpp), RGA @$(rev rkrga)"
 		FLAVOR_PARAGRAPH="This is the rkmpp flavor, for Rockchip vendor/BSP kernels (Armbian 'vendor', 6.1-rkr). Hardware video decoding uses Rockchip MPP and RGA through nyanmisaka's ffmpeg-rockchip. It will NOT work on mainline kernels; use the v4l2requests flavor there."
 		;;
 	v4l2requests)
 		SYNOPSIS="Kodi GBM/GLES for mainline kernels (V4L2 Request API hw decoding)"
+		FFMPEG_SYNOPSIS="ffmpeg/ffprobe for mainline kernels (V4L2 Request API hw decoding)"
 		FFMPEG_NAME="FFmpeg"
 		EXTRA_COMPONENTS=""
 		FLAVOR_PARAGRAPH="This is the v4l2requests flavor, for mainline kernels (Armbian rockchip64 'edge'). Hardware video decoding uses the kernel's V4L2 stateless decoders (hantro, rkvdec, ...) through FFmpeg with LibreELEC's V4L2 Request API patches, plus the DRM PRIME deinterlace filter. It will NOT work on Rockchip vendor kernels; use the rkmpp flavor there."
@@ -41,7 +43,8 @@ case "${FLAVOR}" in
 esac
 
 BUILD_INFO="${FLAVOR} ${PACKAGE_VERSION} (${DISTRO}/${OS_ARCH})"
-COMPONENTS="Kodi ${KODI_BRANCH} @${KODI_REV}, ${FFMPEG_NAME} ${FFMPEG_BRANCH} @${FFMPEG_REV}, dav1d ${DAV1D_BRANCH}${EXTRA_COMPONENTS}"
+FFMPEG_COMPONENTS="${FFMPEG_NAME} ${FFMPEG_BRANCH} @${FFMPEG_REV}, dav1d ${DAV1D_BRANCH}${EXTRA_COMPONENTS}"
+COMPONENTS="Kodi ${KODI_BRANCH} @${KODI_REV}, ${FFMPEG_COMPONENTS}"
 
 # Debian extended description: one space indent, paragraphs separated by " ."
 desc_paragraph() { printf '%s\n' "$1" | fold -s -w 76 | sed -e 's/ *$//' -e 's/^/ /'; }
@@ -50,9 +53,18 @@ LONG_DESCRIPTION="$(
 	echo " ."
 	desc_paragraph "${FLAVOR_PARAGRAPH}"
 	echo " ."
-	desc_paragraph "Bundles its own FFmpeg, dav1d and libdisplay-info plus the shadertoy add-ons, all under /usr/local (not proper FHS packaging). Ships the systemd units kodi (ALSA) and kodi-pulse (PulseAudio), and a Kodi appliance.xml defaulting to DRM PRIME hw acceleration with Direct-To-Plane rendering. Installing disables GDM3/SDDM/LightDM, as Kodi takes over KMS."
+	desc_paragraph "Bundles its own FFmpeg, dav1d and libdisplay-info plus the shadertoy add-ons, all under /usr/local (not proper FHS packaging). Ships the systemd units kodi (ALSA) and kodi-pulse (PulseAudio), and a Kodi appliance.xml defaulting to DRM PRIME hw acceleration with Direct-To-Plane rendering. Installing disables GDM3/SDDM/LightDM, as Kodi takes over KMS. The ffmpeg/ffprobe command line tools are in the separate ffmpeg-kodi-rockchip-gbm package."
 	echo " ."
 	desc_paragraph "Built for ${DISTRO}/${OS_ARCH}: ${COMPONENTS}."
+)"
+FFMPEG_LONG_DESCRIPTION="$(
+	desc_paragraph "The ffmpeg and ffprobe command line tools from the kodi-rockchip-gbm build, for use with or without Kodi; it does not depend on, nor conflict with, kodi-rockchip-gbm."
+	echo " ."
+	desc_paragraph "${FLAVOR_PARAGRAPH}"
+	echo " ."
+	desc_paragraph "Installs to /usr/local/bin (not proper FHS packaging), with private copies of the libraries it needs (dav1d, plus MPP/RGA for rkmpp) in /usr/local/lib/ffmpeg-kodi-rockchip-gbm."
+	echo " ."
+	desc_paragraph "Built for ${DISTRO}/${OS_ARCH}: ${FFMPEG_COMPONENTS}."
 )"
 
 xml_escape() {
@@ -85,7 +97,10 @@ render "${CONTROL}" \
 	@BUILD_INFO@ "${BUILD_INFO}" \
 	@COMPONENTS@ "${COMPONENTS}" \
 	@SYNOPSIS@ "${SYNOPSIS}" \
-	@LONG_DESCRIPTION@ "${LONG_DESCRIPTION}"
+	@LONG_DESCRIPTION@ "${LONG_DESCRIPTION}" \
+	@FFMPEG_COMPONENTS@ "${FFMPEG_COMPONENTS}" \
+	@FFMPEG_SYNOPSIS@ "${FFMPEG_SYNOPSIS}" \
+	@FFMPEG_LONG_DESCRIPTION@ "${FFMPEG_LONG_DESCRIPTION}"
 
 render "${APPLIANCE}" \
 	@BUILD_INFO@ "$(xml_escape "${BUILD_INFO}")" \

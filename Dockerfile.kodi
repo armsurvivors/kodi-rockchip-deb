@@ -271,6 +271,25 @@ SET_RUNPATH
 WORKDIR /pkg/src/usr
 RUN rm -rf /usr/local/include && cp -pr /usr/local /pkg/src/usr/
 
+# ffmpeg/ffprobe go to their own package (ffmpeg-kodi-rockchip-gbm); Kodi links FFmpeg statically and doesn't need them.
+# That package carries private copies of the /usr/local libs they link, in its own dir with a matching RUNPATH, so it
+# shares no paths with kodi-rockchip-gbm: both install together, or each alone.
+RUN <<-STAGE_FFMPEG
+set -e
+d=/pkg/src/ffmpeg-pkg
+libdir=/usr/local/lib/ffmpeg-kodi-rockchip-gbm
+mkdir -p "${d}/usr/local/bin" "${d}${libdir}"
+mv -v /pkg/src/usr/local/bin/ffmpeg /pkg/src/usr/local/bin/ffprobe "${d}/usr/local/bin/"
+for lib in $(ldd /usr/local/bin/ffmpeg /usr/local/bin/ffprobe | awk '$3 ~ /^\/usr\/local\// {print $3}' | sort -u); do
+	cp -vL "${lib}" "${d}${libdir}/$(basename "${lib}")"
+done
+for elf in "${d}/usr/local/bin/ffmpeg" "${d}/usr/local/bin/ffprobe"; do
+	patchelf --set-rpath "${libdir}" "${elf}"
+	readelf -d "${elf}" | grep -F "RUNPATH" | grep -qF "[${libdir}]" || { echo "ERROR: bad RUNPATH on ${elf}" >&2; exit 1; }
+done
+find "${d}" -ls
+STAGE_FFMPEG
+
 # Prepare debian binary package
 WORKDIR /pkg/src
 COPY debian /pkg/src/debian
@@ -283,7 +302,8 @@ WORKDIR /pkg/src/usr/local/share/pulse-kodi
 COPY pulseaudio/system.pa /pkg/src/usr/local/share/pulse-kodi/system.pa
 
 WORKDIR /pkg/src
-RUN echo "usr/*" > debian/kodi-rockchip-gbm.install
+RUN echo "usr/*" > debian/kodi-rockchip-gbm.install && \
+    echo "ffmpeg-pkg/usr/* usr/" > debian/ffmpeg-kodi-rockchip-gbm.install
 
 # Render flavor/version-specific metadata (debian/control, debian/changelog, appliance.xml build info). ARGs here invalidate the cache.
 COPY packaging/render-metadata.sh /pkg/render-metadata.sh
@@ -296,46 +316,23 @@ RUN /pkg/render-metadata.sh /pkg/src && \
 WORKDIR /pkg/src
 RUN debuild --no-lintian --build=binary -us -uc -Zxz -z1
 
-# Show package info
-RUN file /pkg/*.deb && \
-    dpkg-deb -I /pkg/*.deb && \
-    dpkg-deb -f /pkg/*.deb && \
-    apt-get install -y /pkg/*.deb
-
-# Now prepare the real output: the .deb for this release and arch.
-WORKDIR /artifacts
-RUN cp -v /pkg/*.deb kodi-rockchip-gbm_${OS_ARCH}_kodi_${KODI_BRANCH}_ffmpeg_${FFMPEG_ID}_$(lsb_release -c -s).deb
-
-# ffmpeg-only .deb for non-Kodi users: ffmpeg/ffprobe and the /usr/local libs they link. It ships the same files as the
-# full package, hence the Conflicts.
-RUN <<-FFMPEG_DEB
+# Show package info; check the two packages share no files, and that they install together.
+RUN <<-CHECK_DEBS
 set -e
-d=/pkg/ffmpeg-only
-mkdir -p "${d}/DEBIAN" "${d}/usr/local/bin"
-cp -a /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "${d}/usr/local/bin/"
-for lib in $(ldd /usr/local/bin/ffmpeg /usr/local/bin/ffprobe | awk '$3 ~ /^\/usr\/local\// {print $3}' | sort -u); do
-	mkdir -p "${d}$(dirname "${lib}")"
-	cp -aL "${lib}" "${d}${lib}"
-done
-depends="$(cd /pkg/src && dpkg-shlibdeps -O -xkodi-rockchip-gbm -e"${d}/usr/local/bin/ffmpeg" -e"${d}/usr/local/bin/ffprobe" 2>/dev/null | sed -n 's/^shlibs:Depends=//p')"
-cat > "${d}/DEBIAN/control" <<- CONTROL
-	Package: kodi-rockchip-gbm-ffmpeg
-	Version: $(cd /pkg/src && dpkg-parsechangelog -S Version)
-	Architecture: ${OS_ARCH}
-	Maintainer: $(sed -n 's/^Maintainer: //p' /pkg/src/debian/control)
-	Section: video
-	Priority: optional
-	Depends: ${depends}
-	Conflicts: kodi-rockchip-gbm
-	Homepage: https://github.com/armsurvivors/kodi-rockchip-deb
-	Description: ffmpeg/ffprobe from kodi-rockchip-gbm (${FLAVOR}, ffmpeg ${FFMPEG_BRANCH}), without Kodi
-	 The same ffmpeg build as kodi-rockchip-gbm, in /usr/local, for use without Kodi.
-	 It conflicts with kodi-rockchip-gbm, which already contains it.
-CONTROL
-dpkg-deb --root-owner-group -Zxz -z1 --build "${d}" "kodi-rockchip-gbm-ffmpeg_${OS_ARCH}_ffmpeg_${FFMPEG_ID}_$(lsb_release -c -s).deb"
-dpkg-deb -I kodi-rockchip-gbm-ffmpeg_*.deb
-dpkg-deb -c kodi-rockchip-gbm-ffmpeg_*.deb
-FFMPEG_DEB
+for deb in /pkg/*.deb; do file "${deb}"; dpkg-deb -I "${deb}"; done
+dpkg-deb -c /pkg/kodi-rockchip-gbm_*.deb | awk '$1 !~ /^d/ {print $6}' | sort > /tmp/files-kodi
+dpkg-deb -c /pkg/ffmpeg-kodi-rockchip-gbm_*.deb | awk '$1 !~ /^d/ {print $6}' | sort > /tmp/files-ffmpeg
+cat /tmp/files-ffmpeg
+overlap="$(comm -12 /tmp/files-kodi /tmp/files-ffmpeg)"
+[ -z "${overlap}" ] || { echo "ERROR: files in both packages:" >&2; echo "${overlap}" >&2; exit 1; }
+apt-get install -y /pkg/*.deb
+/usr/local/bin/ffmpeg -hide_banner -version
+CHECK_DEBS
+
+# Now prepare the real output: the .debs for this release and arch.
+WORKDIR /artifacts
+RUN cp -v /pkg/kodi-rockchip-gbm_*.deb kodi-rockchip-gbm_${OS_ARCH}_kodi_${KODI_BRANCH}_ffmpeg_${FFMPEG_ID}_$(lsb_release -c -s).deb && \
+    cp -v /pkg/ffmpeg-kodi-rockchip-gbm_*.deb ffmpeg-kodi-rockchip-gbm_${OS_ARCH}_ffmpeg_${FFMPEG_ID}_$(lsb_release -c -s).deb
 
 # An intermediate stage, which is just the base image + the installed built package.
 # Who wouldn't want to run Kodi in a container?
@@ -372,7 +369,7 @@ du -h /var/cache/apt
 du -h /var/lib/apt
 apt-get -y update
 apt-get -y dist-upgrade
-apt-get -y install /debs/kodi-rockchip-gbm_*.deb pulseaudio-utils ir-keytable libegl-mesa0 libgbm1 mesa-libgallium
+apt-get -y install /debs/*.deb pulseaudio-utils ir-keytable libegl-mesa0 libgbm1 mesa-libgallium
 dpkg -l | grep -E 'mesa|libgbm' || true
 INSTALL_DEBS
 
